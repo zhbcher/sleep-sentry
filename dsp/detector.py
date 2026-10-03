@@ -121,6 +121,26 @@ class NoiseFloor:
         return self.level
 
 
+def loudness_contrast_db(all_snr):
+    """
+    响度对比度：最响 10% 帧 与 中位数帧 的 dB 差。
+
+    ⚠️ 这个量**不能**回答"录音里有没有可用的鼾声信号"，只报告、不参与质量门限。
+      原因是实测出来的：分组若由信噪比阈值定义，就是循环论证；
+      改成按响度排序取头部后，APSAA 上量到 3.7~10 dB，但那份录音的音频包络与
+      临床鼾声标注相关系数只有 -0.012 —— 那些"响的时刻"是关门声和脚步声，不是鼾声。
+      单夜无标注数据无法自证"响的是什么"。
+      要真正判断，只能靠频谱形状分类器（有标注训练），或直接与家用监测仪配对实测。
+    """
+    if len(all_snr) < 100:
+        return 0.0
+    a = np.sort(np.asarray(all_snr, dtype=np.float64))
+    k = max(10, int(len(a) * 0.10))
+    top = a[-k:]
+    base = a[len(a) // 2 - k // 2: len(a) // 2 + k // 2 + 1]
+    return float(top.mean() - base.mean())
+
+
 # ---------------------------------------------------------------- 主检测
 
 class EventDetector:
@@ -147,11 +167,14 @@ class EventDetector:
     MIN_ACTIVE_FRAC = 0.02    # 有声帧占比下限
     MIN_PEAKS = 30
 
-    def __init__(self, **kw):
+
+    def __init__(self, sample_rate: int = SR, **kw):
         for k, v in kw.items():
             if not hasattr(type(self), k):
                 raise KeyError(f"unknown param {k}")
             setattr(self, k, v)
+        self.sample_rate = int(sample_rate)
+        self._sub_n = int(round(SUB_S * self.sample_rate))
         self.nf = NoiseFloor()
         self._reset_state()
 
@@ -171,7 +194,8 @@ class EventDetector:
         self._pk_i = 0           # 下一个待判定为"峰"的帧下标
         self._last_peak_t = -1e9
         self._rem = None
-        self.snr_active = []             # 只记有声帧的 SNR
+        self.snr_active = []             # 有声帧的 SNR
+        self.snr_all = []              # 全部帧的 SNR，算可分性用           # 静默帧的 SNR
         self.peaks = []                  # (t, db, prom)
         self.silences = []               # 所有 ≥10s 的静默段（待确认）
         self.events = []
@@ -288,8 +312,9 @@ class EventDetector:
         buf = np.asarray(x, dtype=np.float32)
         if self._rem is not None and len(self._rem):
             buf = np.concatenate([self._rem, buf])
-        n_sub = len(buf) // SUB_N
-        self._rem = buf[n_sub * SUB_N:]
+        sub_n = self._sub_n
+        n_sub = len(buf) // sub_n
+        self._rem = buf[n_sub * sub_n:]
         if n_sub == 0:
             return []
 
@@ -297,7 +322,7 @@ class EventDetector:
         snr_prev = None
         t_prev = None
         for i in range(n_sub):
-            seg = buf[i * SUB_N:(i + 1) * SUB_N].astype(np.float64)
+            seg = buf[i * sub_n:(i + 1) * sub_n].astype(np.float64)
             db = 20.0 * np.log10(np.sqrt((seg ** 2).mean()) + 1e-12)
             nf = self.nf.push(db)
             snr = db - nf
@@ -346,6 +371,7 @@ class EventDetector:
                 self._active = False
                 if self._sil_start is None:
                     self._sil_start = self._off_cross
+            self.snr_all.append(snr)
             if self._active:
                 self.snr_active.append(snr)
 
@@ -370,6 +396,7 @@ class EventDetector:
             "active_frac": float(len(self.snr_active) * SUB_S / max(1e-9, self._t)),
             "peak_count": len(self.peaks),
             "silence_count": len(self.events),
+            "loudness_contrast_db": loudness_contrast_db(self.snr_all),
         }
         quality["ok"] = (
             self._t >= self.MIN_RECORD_S

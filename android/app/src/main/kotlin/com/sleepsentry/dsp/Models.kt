@@ -32,7 +32,18 @@ data class NightQuality(
     val activeSnrMedianDb: Double,
     val activeFraction: Double,
     val peakCount: Int,
-    val ok: Boolean
+    val ok: Boolean,
+    /**
+     * 响度对比度：最响 10% 与中位数之间的 dB 差。
+     *
+     * ⚠️ 这**不能**回答"录音里有没有可用的鼾声信号"，只作为诊断信息展示，不参与质量门限。
+     *   实测依据：若用信噪比阈值划分两组来算可分性，是循环论证；
+     *   改成按响度排序后，在真实低信噪比录音上量到 3.7~10dB，
+     *   但那份录音的音频与临床鼾声标注相关系数只有 -0.012
+     *   —— 那些"响的时刻"是关门声与脚步声，不是鼾声。
+     *   单夜无标注数据无法自证"响的是什么"。
+     */
+    val loudnessContrastDb: Double = 0.0
 ) {
     fun reason(): String = when {
         durationSec < DspConfig.MIN_RECORD_S -> "有效记录不足 ${DspConfig.MIN_RECORD_S / 60} 分钟"

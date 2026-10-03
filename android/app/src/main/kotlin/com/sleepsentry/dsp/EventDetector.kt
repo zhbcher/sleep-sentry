@@ -54,12 +54,13 @@ class EventDetector(
     private val silences = ArrayList<Silence>()
     private val events = ArrayList<BreathingEvent>()
 
-    // 质量统计：SNR 直方图（0.25dB 一格），避免为一整夜的有声帧占内存
+    // 质量统计：SNR 直方图（0.25dB 一格），避免为一整夜占内存
     private val histMin = -40.0
     private val histBin = 0.25
-    private val histBins = IntArray(512)
+    private val histBins = IntArray(512)        // 有声帧
+    private val histAllBins = IntArray(512)     // 全部帧（用于响度对比度）
     private var activeSnrCount = 0
-    private var activeSnrSum = 0.0
+    private var totalFrameCount = 0
 
     val recordedSeconds: Double get() = t
     val peakCount: Int get() = peaks.size
@@ -138,9 +139,11 @@ class EventDetector(
                 active = false
                 if (silStart.isNaN()) silStart = offCross
             }
+            totalFrameCount++
+            val binAll = (((snr - histMin) / histBin).toInt()).coerceIn(0, histAllBins.size - 1)
+            histAllBins[binAll]++
             if (active) {
                 activeSnrCount++
-                activeSnrSum += snr
                 val bin = (((snr - histMin) / histBin).toInt()).coerceIn(0, histBins.size - 1)
                 histBins[bin]++
             }
@@ -154,12 +157,14 @@ class EventDetector(
         return if (events.size > before) events.subList(before, events.size).toList() else emptyList()
     }
 
-    /** 便捷入口：16bit PCM → 滤波 → 检测 */
+    /** 便捷入口：16bit PCM → 滤波 → 检测。滤波器状态跨调用保持连续。 */
     fun processPcm16(pcm: ShortArray, count: Int = pcm.size, t0Sec: Double? = null): List<BreathingEvent> {
         val f = FloatArray(count) { pcm[it] / 32768.0f }
-        val filtered = BandFilter(sampleRate = sampleRate).filter(f, count)
-        return processChunk(filtered, t0Sec)
+        return processChunk(internalFilter.filter(f, count), t0Sec)
     }
+
+    /** 检测器自持滤波器，避免调用方忘了跨块保持状态 */
+    private val internalFilter = BandFilter(sampleRate = sampleRate)
 
     // ---------------------------------------------------------------- 峰检测
 
@@ -290,9 +295,46 @@ class EventDetector(
             ok = t >= DspConfig.MIN_RECORD_S &&
                 median >= DspConfig.MIN_ACTIVE_SNR_DB &&
                 activeFrac >= DspConfig.MIN_ACTIVE_FRAC &&
-                peaks.size >= DspConfig.MIN_PEAKS
+                peaks.size >= DspConfig.MIN_PEAKS,
+            loudnessContrastDb = loudnessContrastDb()
         )
         return events.toList() to quality
+    }
+
+    /**
+     * 响度对比度（dB）：最响 10% 帧均值 − 中位数附近帧均值。
+     * 只报告、不参与质量门限，理由见 [NightQuality.loudnessContrastDb]。
+     */
+    private fun loudnessContrastDb(): Double {
+        if (totalFrameCount < 100) return 0.0
+        val k = max(10, totalFrameCount / 10)
+        val halfK = max(5, k / 2)
+        val mid = totalFrameCount / 2
+        var topSum = 0.0; var topN = 0
+        var baseSum = 0.0; var baseN = 0
+        var running = 0
+        for (b in histAllBins.indices) {
+            val c = histAllBins[b]
+            if (c == 0) continue
+            val v = histMin + b * histBin
+            // 上尾：累计到最后 k 个
+            for (j in 0 until c) {
+                running++
+                if (running > totalFrameCount - k) { topSum += v; topN++ }
+            }
+        }
+        var acc = 0
+        for (b in histAllBins.indices) {
+            val c = histAllBins[b]
+            if (c == 0) continue
+            val v = histMin + b * histBin
+            for (j in 0 until c) {
+                acc++
+                if (acc in (mid - halfK + 1)..(mid + halfK)) { baseSum += v; baseN++ }
+            }
+        }
+        if (topN == 0 || baseN == 0) return 0.0
+        return topSum / topN - baseSum / baseN
     }
 
     private fun snrMedian(): Double {
@@ -313,7 +355,7 @@ class EventDetector(
         rem = FloatArray(0)
         nf.reset(); hist.reset()
         peaks.clear(); silences.clear(); events.clear()
-        histBins.fill(0); activeSnrCount = 0; activeSnrSum = 0.0
+        histBins.fill(0); histAllBins.fill(0); activeSnrCount = 0; totalFrameCount = 0
     }
 
     private fun clamp01(v: Double) = max(0.0, min(1.0, v))

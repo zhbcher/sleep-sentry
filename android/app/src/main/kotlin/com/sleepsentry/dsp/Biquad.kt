@@ -65,8 +65,14 @@ class BandFilter(
     fHi: Double = DEFAULT_F_HI,
     private val sampleRate: Int = DspConfig.SAMPLE_RATE
 ) {
-    private val hp = Biquad.highpass(fLo, sampleRate.toDouble())
-    private val lp = Biquad.lowpass(fHi, sampleRate.toDouble())
+    // 上界必须随采样率收缩：4kHz 录音的奈奎斯特只有 2kHz，
+    // 还按 4000Hz 设低通只会把混叠放进来（实测 APSAA 数据集就是 4kHz）。
+    private val lp = Biquad.lowpass(
+        fHi.coerceAtMost(sampleRate * 0.45), sampleRate.toDouble()
+    )
+    private val hp = Biquad.highpass(
+        fLo.coerceAtMost(sampleRate * 0.45), sampleRate.toDouble()
+    )
 
     /** 就地滤波前 count 个样本，返回同样长度的数组。滤波状态跨调用保持连续。 */
     fun filter(buf: FloatArray, count: Int = buf.size): FloatArray {
