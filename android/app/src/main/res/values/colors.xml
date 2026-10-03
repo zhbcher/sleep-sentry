@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand">#FF2C5F8A</color>
+    <color name="brandDim">#FF6E93B4</color>
+    <color name="brandDark">#FF1B3B56</color>
+    <color name="bg">#FFF6F8FA</color>
+    <color name="card">#FFFFFFFF</color>
+    <color name="text">#FF1A1C1E</color>
+    <color name="textDim">#FF6B7280</color>
+    <color name="good">#FF2E7D5B</color>
+    <color name="warn">#FFB4761E</color>
+    <color name="bad">#FFB03A3A</color>
+    <color name="accent">#FFD08A3E</color>
+</resources>

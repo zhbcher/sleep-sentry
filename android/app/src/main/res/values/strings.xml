@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">守夜</string>
+
+    <string name="tagline">把手机放床头，插上电，其余交给它</string>
+
+    <!-- 权限 -->
+    <string name="perm_mic_title">需要麦克风权限</string>
+    <string name="perm_mic_body">守夜靠手机麦克风听你整晚的呼吸声，音频只在本机处理，不上传。</string>
+    <string name="perm_notif_title">需要通知权限</string>
+    <string name="perm_notif_body">整夜监听要保持一条常驻通知，这是安卓系统要求，也让录���状态一目了然。</string>
+
+    <!-- 主界面 -->
+    <string name="action_enable">开启守夜</string>
+    <string name="action_disable">停止</string>
+    <string name="label_state">当前状态</string>
+    <string name="state_idle">未开启</string>
+    <string name="state_armed">待命中（正在监听）</string>
+    <string name="state_waiting">等待插上充电器并进入时段</string>
+    <string name="label_window">监听时段</string>
+    <string name="label_last_night">昨夜记录</string>
+    <string name="label_trend">近 30 晚趋势</string>
+    <string name="no_record">还没有记录。插上充电器、放手机在床头，第二天早上这里会有内容。</string>
+
+    <!-- 报告 -->
+    <string name="report_title">昨晚</string>
+    <string name="report_disclaimer">本记录基于手机麦克风的声音推算，不构成医疗诊断。声音记录无法反映血氧与中枢性事件，请以医院睡眠监测（PSG/HSAT）为准。</string>
+    <string name="report_quality_bad">昨晚信号不足，未作判定：%1$s</string>
+    <string name="label_events_per_hour">每小时疑似事件</string>
+    <string name="label_longest">最长静默</string>
+    <string name="label_snore">鼾声</string>
+    <string name="label_recorded">有效记录</string>
+    <string name="label_peak">最严重一次</string>
+    <string name="action_play">点击回听</string>
+    <string name="label_silent_s">静默 %1$d 秒</string>
+
+    <!-- 通知 -->
+    <string name="notif_channel_armed">守夜进行中</string>
+    <string name="notif_channel_report">昨晚总结</string>
+    <string name="notif_channel_alert">异常提醒</string>
+    <string name="notif_armed_title">守夜中</string>
+    <string name="notif_report_title">昨晚守夜完成</string>
+    <string name="notif_alert_no_breath">已 %1$d 分钟未检测到呼吸声</string>
+    <string name="notif_alert_failed">昨晚只记录了 %1$s，请检查：电池优化未关闭 / 麦克风权限 / 手机被清理</string>
+</resources>
