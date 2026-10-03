@@ -21,6 +21,7 @@ import com.sleepsentry.dsp.EventDetector
 import com.sleepsentry.dsp.NightQuality
 import com.sleepsentry.dsp.subFrameDb
 import com.sleepsentry.store.NightRecord
+import com.sleepsentry.store.PcmStreamWriter
 import com.sleepsentry.store.NightStore
 import com.sleepsentry.store.StoredEvent
 import com.sleepsentry.store.toStored
@@ -182,7 +183,12 @@ class SentryService : Service() {
         val filter = BandFilter()
         val rolling = RollingAudioBuffer(100.0)
         val sampler = EnvelopeSampler(30.0)
-        val fullPcm = if (prefs.keepFullAudio) ArrayList<ShortArray>() else null
+        // 整夜音频必须边录边写：攒在内存里 8 小时约 900MB，必然 OOM
+        var fullWriter: PcmStreamWriter? = if (prefs.keepFullAudio) {
+            runCatching {
+                PcmStreamWriter(store.audioFile("full_${nightDay(System.currentTimeMillis())}.pcm"), sr)
+            }.getOrNull()
+        } else null
 
         val source = pickSource()
         val rec = try {
@@ -232,7 +238,7 @@ class SentryService : Service() {
 
                 // 先留音频再判定：事件要过几秒才确认，但音频必须提前躺在缓冲里
                 rolling.append(pcm, n)
-                fullPcm?.add(pcm)
+                fullWriter?.write(pcm, n)
 
                 val f = FloatArray(n) { pcm[it] / 32768.0f }
                 val filtered = filter.filter(f, n)
@@ -274,7 +280,8 @@ class SentryService : Service() {
                 events.add(e.toStored(name, 0.0, st.second))
             }
 
-            saveNight(day, startMs, elapsed, events, quality, fullPcm, sampler)
+            val fullLenSec = fullWriter?.close() ?: 0.0
+            saveNight(day, startMs, elapsed, events, quality, fullWriter, fullLenSec, sampler)
         }
     }
 
@@ -315,20 +322,13 @@ class SentryService : Service() {
         elapsed: Double,
         events: List<StoredEvent>,
         quality: NightQuality,
-        fullPcm: ArrayList<ShortArray>?,
+        fullWriter: PcmStreamWriter?,
+        fullLenSec: Double,
         sampler: EnvelopeSampler
     ) {
         if (elapsed < 30.0) return     // 太短不记，避免垃圾数据
 
-        var fullAudioName: String? = null
-        if (fullPcm != null && fullPcm.isNotEmpty()) {
-            val total = fullPcm.sumOf { it.size }
-            val all = ShortArray(total)
-            var p = 0
-            for (c in fullPcm) { System.arraycopy(c, 0, all, p, c.size); p += c.size }
-            fullAudioName = "full_$day.pcm"
-            store.putFullAudio(fullAudioName, all)
-        }
+        val fullAudioName = if (fullWriter != null && fullLenSec > 0) "full_$day.pcm" else null
 
         val rec = NightRecord(
             date = day,

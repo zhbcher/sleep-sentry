@@ -108,27 +108,15 @@ class TimelineView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action != MotionEvent.ACTION_UP) return true
         val w = width.toFloat()
-        val best = -1
-        var bestD = 1e9f
-        events.forEachIndexed { i, e ->
-            val x1 = (e.startSec / recordedSec).toFloat() * w
-            val x2 = (e.endSec / recordedSec).toFloat() * w
-            val x = event.x
-            if (x >= x1 - 20f && x <= x2 + 20f) {
-                val d = kotlin.math.abs(x - (x1 + x2) / 2)
-                if (d < bestD) { bestD = d; }
-                if (best == -1) { /* keep first */ }
-            }
-        }
-        // 重新取最近的一个
+        // 取点击位置附近、离中心最近的那个事件
         var pick = -1
-        var pd = 1e9f
+        var bestDist = Float.MAX_VALUE
         events.forEachIndexed { i, e ->
             val x1 = (e.startSec / recordedSec).toFloat() * w
             val x2 = (e.endSec / recordedSec).toFloat() * w
             if (event.x >= x1 - 20f && event.x <= x2 + 20f) {
                 val d = kotlin.math.abs(event.x - (x1 + x2) / 2)
-                if (d < pd) { pd = d; pick = i }
+                if (d < bestDist) { bestDist = d; pick = i }
             }
         }
         selected = pick
