@@ -22,15 +22,22 @@
         <com.sleepsentry.ui.MonthCalendarView
             android:id="@+id/calendar"
             android:layout_width="match_parent"
-            android:layout_height="300dp"
+            android:layout_height="330dp"
             android:layout_marginTop="10dp"
             android:background="@drawable/card_bg" />
 
         <TextView
+            android:id="@+id/legendHost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="vertical" />
+        <TextView
             android:id="@+id/legend"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
+            android:text="颜色越深越严重，格内数字为当晚事件次数"
             android:textColor="@color/textDim"
             android:textSize="12sp" />
 

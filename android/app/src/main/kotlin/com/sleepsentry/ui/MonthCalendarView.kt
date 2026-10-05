@@ -5,99 +5,98 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.sleepsentry.dsp.Severity
 import java.util.Calendar
-import java.util.Locale
 
 /**
- * 月历视图：每个日期一个色块，颜色深浅表示那晚疑似呼吸暂停的严重程度。
+ * 月历视图：每晚一个色块，颜色深浅 = 当晚疑似呼吸暂停的严重程度。
  *
- * 这是"长期趋势"最直观的呈现 —— 一次看一个月，
- * 哪几晚特别糟、是否在改善，比翻单晚报告有用得多。
+ * v1.2.0 用**白字画浅灰格子**，对比度只有 1.14:1，用户反馈"看不清日期"。
+ * 两处结构性修正：
+ *  1. **文字颜色按背景亮度自适应**（见 CalendarStyle），所有状态都 ≥ WCAG AA 4.5:1，
+ *     并有单元测试钉死 —— 这次不再靠眼睛判断"清不清"
+ *  2. **格里直接显示当晚的事件次数**，成为数据日历而不是纯色块，
+ *     色弱用户不靠颜色也能读懂
  *
- * 颜色分档与报告页的分级完全一致（Severity.Level），不另立一套标准。
+ * 布局遵循标准日历：月份标题居中 + 左右翻页、星期表头、6×7 网格、
+ * 今天加圈、选中加粗描边。
  */
 class MonthCalendarView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
 
-    /** 某一天的状态 */
     enum class DayState { NO_RECORD, INSUFFICIENT, NORMAL, MILD, MODERATE, SEVERE }
 
-    private val cellPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val dayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE; textSize = 26f; textAlign = Paint.Align.CENTER
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
-    private val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF9AA4B2.toInt(); textSize = 22f; textAlign = Paint.Align.CENTER
+    private val countPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER; textSize = 22f
+    }
+    private val weekPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF6B7280.toInt(); textSize = 24f; textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    private val weekEndPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF9AA4B2.toInt(); textSize = 24f; textAlign = Paint.Align.CENTER
     }
     private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF1A1C1E.toInt(); textSize = 30f; textAlign = Paint.Align.CENTER
+        color = 0xFF1A1C1E.toInt(); textSize = 34f; textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF2C5F8A.toInt(); textSize = 46f; textAlign = Paint.Align.CENTER
     }
     private val todayRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 3f; color = 0xFF2C5F8A.toInt()
+        style = Paint.Style.STROKE; strokeWidth = 3.5f; color = 0xFF2C5F8A.toInt()
     }
     private val selectedRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 4f; color = 0xFFD08A3E.toInt()
+        style = Paint.Style.STROKE; strokeWidth = 5f; color = 0xFFD08A3E.toInt()
     }
 
     private var year = 0
-    private var month = 0            // 0..11
-    private val states = HashMap<Int, DayState>()   // dayOfMonth -> state
-    private val perHour = HashMap<Int, Double>()    // dayOfMonth -> eventsPerHour
+    private var month = 0
+    private val states = HashMap<Int, DayState>()
+    private val counts = HashMap<Int, Int>()   // 当晚事件数，格内显示
 
     private var selectedDay = -1
-    /** 点击某天（1..31），0 表示点了空白格 */
     var onDayClick: ((Int) -> Unit)? = null
-    /** 点击左右箭头 */
-    var onMonthChange: ((Int) -> Unit)? = null    // -1 上月, +1 下月
+    var onMonthChange: ((Int) -> Unit)? = null
 
-    private val monthNames = arrayOf(
-        "1 月", "2 月", "3 月", "4 月", "5 月", "6 月",
-        "7 月", "8 月", "9 月", "10 月", "11 月", "12 月"
-    )
+    private val arrowLeftHit = RectF()
+    private val arrowRightHit = RectF()
+    private val cellsRect = RectF()
+    private var cellW = 0f
+    private var cellH = 0f
 
     init {
         val c = Calendar.getInstance()
         year = c.get(Calendar.YEAR)
         month = c.get(Calendar.MONTH)
+        setBackgroundColor(Color.WHITE)
     }
 
-    fun setMonth(y: Int, m: Int) {
-        year = y
-        month = m
-        invalidate()
-    }
+    fun setMonth(y: Int, m: Int) { year = y; month = m; invalidate() }
 
-    fun setData(dayStates: Map<Int, DayState>, dayPerHour: Map<Int, Double>) {
+    fun setData(dayStates: Map<Int, DayState>, dayCounts: Map<Int, Int>) {
         states.clear(); states.putAll(dayStates)
-        perHour.clear(); perHour.putAll(dayPerHour)
+        counts.clear(); counts.putAll(dayCounts)
         invalidate()
     }
 
-    fun select(day: Int) {
-        selectedDay = day
-        invalidate()
-    }
-
+    fun select(day: Int) { selectedDay = day; invalidate() }
     fun currentYear(): Int = year
     fun currentMonth(): Int = month
-
-    fun title(): String = "${year}年 ${month + 1}月"
-
-    private fun colorFor(state: DayState): Int = when (state) {
-        DayState.NO_RECORD -> 0xFFE8ECF1.toInt()
-        DayState.INSUFFICIENT -> 0xFFCFD6DE.toInt()
-        DayState.NORMAL -> 0xFF6FA98A.toInt()
-        DayState.MILD -> 0xFFD9B96A.toInt()
-        DayState.MODERATE -> 0xFFD08A7A.toInt()
-        DayState.SEVERE -> 0xFFC05545.toInt()
-    }
-
+    fun title(): String = "${year}年${month + 1}月"
     fun stateOf(day: Int): DayState = states[day] ?: DayState.NO_RECORD
+    fun countOf(day: Int): Int = counts[day] ?: 0
+    fun hasData(day: Int): Boolean = states.containsKey(day)
 
     override fun onDraw(canvas: Canvas) {
         try {
@@ -112,87 +111,93 @@ class MonthCalendarView @JvmOverloads constructor(
         val h = height.toFloat()
         if (w <= 0f || h <= 0f) return
 
-        val padX = 12f
-        val headerH = 40f
-        val weekH = 26f
-        val arrowW = 44f
-
-        // 年月 + 箭头
-        canvas.drawText(title(), w / 2, 28f, titlePaint)
-        canvas.drawText("‹", padX + arrowW / 2, 32f, headerPaint)
-        canvas.drawText("›", w - padX - arrowW / 2, 32f, headerPaint)
-        // 加大点击热区
-        arrowLeftHit.set(padX, 0f, padX + arrowW, headerH)
-        arrowRightHit.set(w - padX - arrowW, 0f, w - padX, headerH)
-
-        val gridTop = headerH + weekH
+        val padX = 8f
+        val headerH = 52f
+        val weekH = 34f
+        val arrowW = 64f
         val cols = MonthGrid.COLS
-        val cellW = (w - padX * 2) / cols
-        val rows = 6
-        val cellH = ((h - gridTop) / rows).coerceAtLeast(24f)
+
+        // 月份标题 + 翻页箭头
+        canvas.drawText(title(), w / 2, 40f, titlePaint)
+        canvas.drawText("‹", padX + arrowW / 2, 44f, arrowPaint)
+        canvas.drawText("›", w - padX - arrowW / 2, 44f, arrowPaint)
+        arrowLeftHit.set(0f, 0f, padX * 2 + arrowW, headerH)
+        arrowRightHit.set(w - padX * 2 - arrowW, 0f, w, headerH)
 
         // 星期表头
         val week = arrayOf("一", "二", "三", "四", "五", "六", "日")
+        val gridLeft = padX
+        val gridW = w - padX * 2
+        cellW = gridW / cols
         for (i in 0 until cols) {
             canvas.drawText(
-                week[i], padX + cellW * (i + 0.5f), headerH + weekH - 8f, headerPaint
+                week[i], gridLeft + cellW * (i + 0.5f), headerH + weekH - 10f,
+                if (i >= 5) weekEndPaint else weekPaint
             )
         }
 
-        val firstDow = MonthGrid.firstDayOfWeek(year, month)
-        val daysInMonth = MonthGrid.daysInMonth(year, month)
+        val gridTop = headerH + weekH
+        val rows = 6
+        cellH = ((h - gridTop) / rows).coerceAtLeast(30f)
 
         val today = Calendar.getInstance()
         val isThisMonth = today.get(Calendar.YEAR) == year && today.get(Calendar.MONTH) == month
         val todayDay = today.get(Calendar.DAY_OF_MONTH)
 
-        for (d in 1..daysInMonth) {
-            val slot = firstDow + d - 1
-            val r = slot / cols
-            val c = slot % cols
-            val cx = padX + cellW * c
+        val days = MonthGrid.daysInMonth(year, month)
+        for (d in 1..days) {
+            val slot = MonthGrid.slotOf(d, year, month)
+            val r = MonthGrid.rowOf(slot)
+            val c = MonthGrid.colOf(slot)
+            val cx = gridLeft + cellW * c
             val cy = gridTop + cellH * r
-            val inset = (minOf(cellW, cellH) * 0.14f)
+            val inset = (minOf(cellW, cellH) * 0.10f)
             val rect = RectF(
                 cx + inset, cy + inset,
                 cx + cellW - inset, cy + cellH - inset
             )
-            cellPaint.color = colorFor(stateOf(d))
-            canvas.drawRoundRect(rect, 10f, 10f, cellPaint)
 
-            if (isThisMonth && d == todayDay) canvas.drawRoundRect(rect, 10f, 10f, todayRing)
-            if (d == selectedDay) canvas.drawRoundRect(rect, 10f, 10f, selectedRing)
+            val state = stateOf(d)
+            fillPaint.color = CalendarStyle.colorFor(state)
+            canvas.drawRoundRect(rect, 12f, 12f, fillPaint)
 
-            val label = d.toString()
-            canvas.drawText(label, rect.centerX(), rect.centerY() + 9f, dayPaint)
+            if (isThisMonth && d == todayDay) canvas.drawRoundRect(rect, 12f, 12f, todayRing)
+            if (d == selectedDay) canvas.drawRoundRect(rect, 12f, 12f, selectedRing)
 
-            // 右上角小圆点提示"这天有数据"
-            if (perHour.containsKey(d)) {
-                cellPaint.color = 0x66FFFFFF.toInt()
-                canvas.drawCircle(rect.right - inset * 0.8f, rect.top + inset * 0.8f, 3.5f, cellPaint)
+            // 文字颜色随背景自适应：浅格子黑字、深格子白字
+            val tc = CalendarStyle.bestTextColor(state)
+            dayPaint.color = tc
+            countPaint.color = tc
+            dayPaint.textSize = (cellH * 0.34f).coerceIn(20f, 34f)
+            countPaint.textSize = (cellH * 0.22f).coerceIn(13f, 22f)
+
+            val cxm = rect.centerX()
+            if (hasData(d)) {
+                canvas.drawText(d.toString(), cxm, rect.centerY() + dayPaint.textSize * 0.14f, dayPaint)
+                val n = countOf(d)
+                if (n > 0) {
+                    countPaint.alpha = 205
+                    canvas.drawText("$n", cxm, rect.bottom - inset * 1.4f, countPaint)
+                    countPaint.alpha = 255
+                }
+            } else {
+                canvas.drawText(d.toString(), cxm, rect.centerY() + dayPaint.textSize * 0.36f, dayPaint)
             }
         }
-        cellsRect.set(padX, gridTop, w - padX, gridTop + cellH * rows)
-        cellWValue = cellW
-        cellHValue = cellH
+        cellsRect.set(gridLeft, gridTop, gridLeft + gridW, gridTop + cellH * rows)
     }
-
-    private val arrowLeftHit = RectF()
-    private val arrowRightHit = RectF()
-    private val cellsRect = RectF()
-    private var cellWValue = 0f
-    private var cellHValue = 0f
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action != MotionEvent.ACTION_UP) return true
-        val x = event.x
-        val y = event.y
-        if (arrowLeftHit.contains(x, y)) { onMonthChange?.invoke(-1); performClick(); return true }
-        if (arrowRightHit.contains(x, y)) { onMonthChange?.invoke(1); performClick(); return true }
-        if (!cellsRect.contains(x, y)) return true
-
+        if (arrowLeftHit.contains(event.x, event.y)) {
+            onMonthChange?.invoke(-1); performClick(); return true
+        }
+        if (arrowRightHit.contains(event.x, event.y)) {
+            onMonthChange?.invoke(1); performClick(); return true
+        }
+        if (!cellsRect.contains(event.x, event.y)) return true
         val day = MonthGrid.dayAt(
-            x, y, cellsRect.left, cellsRect.top, cellWValue, cellHValue, year, month
+            event.x, event.y, cellsRect.left, cellsRect.top, cellW, cellH, year, month
         )
         if (day > 0) {
             selectedDay = day
@@ -209,7 +214,7 @@ class MonthCalendarView @JvmOverloads constructor(
     }
 }
 
-/** 把某一晚记录映射成日历色块状态 */
+/** 记录 → 色块状态 */
 object DayStateMapper {
     fun of(eventsPerHour: Double, hasRecord: Boolean, qualityOk: Boolean): MonthCalendarView.DayState {
         if (!hasRecord) return MonthCalendarView.DayState.NO_RECORD

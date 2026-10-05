@@ -27,7 +27,7 @@ class CalendarFragment : Fragment() {
 
     private lateinit var store: NightStore
     private lateinit var cal: MonthCalendarView
-    private lateinit var legend: TextView
+    private lateinit var legendHost: android.widget.LinearLayout
     private lateinit var dayTitle: TextView
     private lateinit var dayState: TextView
     private lateinit var dayDetail: TextView
@@ -42,15 +42,14 @@ class CalendarFragment : Fragment() {
     override fun onViewCreated(view: View, s: Bundle?) {
         store = NightStore(requireContext())
         cal = view.findViewById(R.id.calendar)
-        legend = view.findViewById(R.id.legend)
+        legendHost = view.findViewById(R.id.legendHost)
         dayTitle = view.findViewById(R.id.dayTitle)
         dayState = view.findViewById(R.id.dayState)
         dayDetail = view.findViewById(R.id.dayDetail)
         dayReportBtn = view.findViewById(R.id.dayReportBtn)
         trend = view.findViewById(R.id.trend)
 
-        legend.text = "颜色越深越严重 · " +
-            "灰=无记录　浅灰=信号不足　绿=正常　黄=轻度　橙=中度　红=重度"
+        buildLegend(legendHost)
 
         cal.onMonthChange = { dir ->
             val c = Calendar.getInstance()
@@ -81,17 +80,62 @@ class CalendarFragment : Fragment() {
         val y = cal.currentYear()
         val m = cal.currentMonth()
         val states = HashMap<Int, MonthCalendarView.DayState>()
-        val perHour = HashMap<Int, Double>()
+        val counts = HashMap<Int, Int>()
         for (r in all) {
             val d = MonthGrid.parseDate(r.date) ?: continue
             if (d.first != y || d.second != m) continue
             val day = d.third
-            perHour[day] = r.eventsPerHour
+            counts[day] = r.events.size
             states[day] = DayStateMapper.of(r.eventsPerHour, true, r.quality.ok)
         }
-        cal.setData(states, perHour)
+        cal.setData(states, counts)
         trend.setData(all)
         onDayPicked(selectedDate?.let { MonthGrid.parseDate(it)?.third } ?: todayDayOf(y, m))
+    }
+
+    /**
+     * 图例用真实的色块 + 文案，而不是一句话描述。
+     * 颜色直接从 CalendarStyle 取，保证图例和日历里的颜色**永远一致**
+     * —— 否则改了配色忘了改图例，用户会按错的刻度理解。
+     */
+    private fun buildLegend(host: android.widget.LinearLayout) {
+        val ctx = requireContext()
+        val pad = (6 * ctx.resources.displayMetrics.density).toInt()
+        val size = (16 * ctx.resources.displayMetrics.density).toInt()
+        host.removeAllViews()
+        val pairs = listOf(
+            MonthCalendarView.DayState.NO_RECORD to "无记录",
+            MonthCalendarView.DayState.INSUFFICIENT to "信号不足",
+            MonthCalendarView.DayState.NORMAL to "正常",
+            MonthCalendarView.DayState.MILD to "轻度",
+            MonthCalendarView.DayState.MODERATE to "中度",
+            MonthCalendarView.DayState.SEVERE to "重度"
+        )
+        pairs.chunked(3).forEach { rowItems ->
+            val row = android.widget.LinearLayout(ctx).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+            }
+            rowItems.forEach { (st, label) ->
+                val sw = android.view.View(ctx).apply {
+                    layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply {
+                        marginEnd = (6 * ctx.resources.displayMetrics.density).toInt()
+                    }
+                    setBackgroundColor(CalendarStyle.colorFor(st))
+                }
+                val tv = android.widget.TextView(ctx).apply {
+                    text = label
+                    textSize = 12f
+                    setTextColor(CalendarStyle.textColorFor(CalendarStyle.NO_RECORD))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { marginEnd = (14 * ctx.resources.displayMetrics.density).toInt() }
+                }
+                row.addView(sw)
+                row.addView(tv)
+            }
+            host.addView(row)
+        }
     }
 
     private fun onDayPicked(day: Int) {
