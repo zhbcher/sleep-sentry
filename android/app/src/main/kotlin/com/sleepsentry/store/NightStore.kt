@@ -267,16 +267,38 @@ class NightStore(private val ctx: Context) {
 
     // ---------------------------------------------------------------- 清除
 
-    /** 清除返回删除的文件数与释放的字节数 */
-    fun clearAll(): Pair<Int, Long> {
+    /**
+     * 清除**全部音频文件**，保留所有历史记录与统计。
+     *
+     * 用户明确要求：清录音 ≠ 清数据。
+     * 音频只是"证据"，可以随时重录；统计（趋势、日历色块、分级）才是这个 App 的价值，
+     * 一并删掉等于把长期积累的数据毁掉。
+     * 返回 (删除的文件数, 释放的字节数)。
+     */
+    fun clearAllAudio(): Pair<Int, Long> {
         var n = 0
         var bytes = 0L
         (audioDir.listFiles() ?: emptyArray()).forEach {
             bytes += it.length()
             if (it.delete()) n++
         }
-        (nightsDir.listFiles() ?: emptyArray()).forEach { it.delete() }
+        // 记录里的音频引用置空，界面回放按钮会显示"无音频"而不是点不动
+        list().forEach { rec ->
+            if (rec.events.any { it.audioFile != null } || rec.fullAudioFile != null) {
+                save(rec.copy(
+                    events = rec.events.map { it.copy(audioFile = null) },
+                    fullAudioFile = null
+                ))
+            }
+        }
         return n to bytes
+    }
+
+    /** 彻底清除：音频 + 历史记录。只在用户明确要"恢复出厂"时用。 */
+    fun clearEverything(): Pair<Int, Long> {
+        val r = clearAllAudio()
+        (nightsDir.listFiles() ?: emptyArray()).forEach { it.delete() }
+        return r
     }
 
     /** 只清某一晚的音频，保留当晚统计 */

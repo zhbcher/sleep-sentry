@@ -11,8 +11,8 @@ android {
         applicationId = "com.sleepsentry"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.1.0"
+        versionCode = 4
+        versionName = "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -53,6 +53,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
 
     testImplementation("junit:junit:4.13.2")
 }

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="日历"
+            android:textColor="@color/text"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <com.sleepsentry.ui.MonthCalendarView
+            android:id="@+id/calendar"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/card_bg" />
+
+        <TextView
+            android:id="@+id/legend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/textDim"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:id="@+id/dayCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/dayTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/dayState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/dayDetail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/textDim"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/dayReportBtn"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="10dp"
+                android:text="查看这一晚的完整报告" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="近 30 晚趋势"
+            android:textColor="@color/text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <com.sleepsentry.ui.TrendView
+            android:id="@+id/trend"
+            android:layout_width="match_parent"
+            android:layout_height="110dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/card_bg" />
+    </LinearLayout>
+</ScrollView>
