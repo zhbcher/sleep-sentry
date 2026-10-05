@@ -19,7 +19,14 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import detector as D
 
-ZIP = "/Users/zhoubo/deepseek/sleepsentry/data/APSAA.zip"
+import os
+# 数据集不在仓库里（3.7GB）。默认从仓库同级目录找，也可用环境变量覆盖：
+#   APSAA_ZIP=/path/to/APSAA.zip python3 run_apsaa.py
+# 获取：https://zenodo.org/records/14096541  (CC-BY-4.0)
+ZIP = os.environ.get(
+    "APSAA_ZIP",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "data", "APSAA.zip")
+)
 
 MATCH_TOL_S = 10.0
 TARGET_EVENTS = {"Obstructive Apnea", "Mixed Apnea"}
