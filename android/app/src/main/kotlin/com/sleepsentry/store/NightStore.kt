@@ -175,20 +175,37 @@ class NightStore(private val ctx: Context) {
 
     fun audioFile(name: String): File = File(audioDir, name)
 
+    // ---------------------------------------------------------------- 音频段
+
     /**
-     * 写入一个音频段并执行环形覆盖。
-     * 返回该段在文件内的起点秒数，便于播放时定位。
+     * 片段文件名里**带事件发生的绝对时刻**。
+     *
+     * 旧版只带递增序号（seg_<date>_0001.pcm），有两个问题：
+     *  1. 事件要过约 5 秒才确认，序号 ≠ 发生时间，顺序本身就对不上
+     *  2. 序号从 9999 进到 10000 时，字典序 "10000" < "9999"，
+     *     按文件名排序会**倒过来** —— 这就是用户看到的"排序混乱"
+     * 带时刻之后，字典序 == 时间序，排序问题从根上消失。
+     */
+    fun segmentFileName(date: String, eventAbsMillis: Long, index: Int): String =
+        SegmentNaming.segment(date, eventAbsMillis, index)
+
+    fun fullAudioFileName(date: String): String = SegmentNaming.fullAudio(date)
+
+    /**
+     * 写入一个音频段，并按配额淘汰旧文件。
+     * @param eventAbsMillis 该事件发生的绝对时刻（决定淘汰顺序）
      */
     fun putSegment(
         nightDate: String,
         pcm: ShortArray,
         fileName: String,
-        maxSegments: Int = MAX_SEGMENTS
+        eventAbsMillis: Long = System.currentTimeMillis()
     ): Pair<File, Double> {
         val f = File(audioDir, fileName)
         f.writeBytes(pcm.toBytes())
+        f.setLastModified(eventAbsMillis)
         val lenSec = pcm.size.toDouble() / com.sleepsentry.dsp.DspConfig.SAMPLE_RATE
-        trimRing(nightDate, maxSegments)
+        enforceQuota(nightDate)
         return f to lenSec
     }
 
@@ -197,35 +214,99 @@ class NightStore(private val ctx: Context) {
     }
 
     /** 整夜音频（可选功能）：一次写入，返回时长秒 */
-    fun putFullAudio(fileName: String, pcm: ShortArray): Double {
+    fun putFullAudio(fileName: String, pcm: ShortArray, recordedAtMillis: Long): Double {
         val f = File(audioDir, fileName)
         f.writeBytes(pcm.toBytes())
+        f.setLastModified(recordedAtMillis)
+        enforceQuota(f.name.removePrefix("full_").removeSuffix(".pcm"))
         return pcm.size.toDouble() / com.sleepsentry.dsp.DspConfig.SAMPLE_RATE
     }
 
-    /**
-     * 环形覆盖：只保留最近的 maxSegments 段。
-     * 统计 JSON 不受影响，永远保留。
-     */
-    private fun trimRing(nightDate: String, maxSegments: Int) {
-        val segs = audioDir.listFiles { f -> f.name.startsWith("seg_${nightDate}_") }
-            ?.sortedBy { it.name } ?: return
-        if (segs.size <= maxSegments) return
-        val excess = segs.size - maxSegments
-        for (i in 0 until excess) segs[i].delete()
-        // 同步清理引用了已删除文件的记录
-        load(nightDate)?.let { rec ->
-            val alive = segs.drop(excess).map { it.name }.toSet()
-            val kept = rec.events.filter { it.audioFile == null || it.audioFile in alive }
-            if (kept.size != rec.events.size) save(rec.copy(events = kept))
-        }
+    // ---------------------------------------------------------------- 配额
+
+    /** 该夜所有音频文件的清单（含事件片段与整夜音频） */
+    fun audioItems(nightDate: String): List<StorageQuota.Item> {
+        val prefix = nightDate
+        return (audioDir.listFiles() ?: emptyArray())
+            .filter { it.name.startsWith("seg_$prefix") || it.name.startsWith("full_$prefix") }
+            .map {
+                StorageQuota.Item(
+                    name = it.name,
+                    bytes = it.length(),
+                    recordedAtMillis = SegmentNaming.parseRecordedAt(it),
+                    isFullAudio = it.name.startsWith("full_")
+                )
+            }
     }
+
+    /** 该夜音频当前占用字节 */
+    fun audioUsageBytes(nightDate: String): Long = audioItems(nightDate).sumOf { it.bytes }
+
+    /**
+     * 按配额淘汰。统计 JSON 不受影响，永远保留；只删音频。
+     * 必须在写完新文件之后调用（这样新片段一定在"最新"那端，不会被立刻删掉）。
+     */
+    fun enforceQuota(nightDate: String, quotaMb: Int) {
+        val items = audioItems(nightDate)
+        if (items.isEmpty()) return
+        val quotaBytes = if (quotaMb <= 0) 0L else quotaMb.toLong() * 1024 * 1024
+        val plan = StorageQuota.plan(items, quotaBytes)
+        if (plan.delete.isEmpty()) return
+
+        for (name in plan.delete) File(audioDir, name).delete()
+
+        // 同步把已删除音频的引用从当晚记录里摘掉，避免界面点回放时找不到文件
+        val rec = load(nightDate) ?: return
+        val alive = plan.keep.toSet()
+        val kept = rec.events.filter { it.audioFile == null || it.audioFile in alive }
+        if (kept.size != rec.events.size) save(rec.copy(events = kept))
+    }
+
+    fun enforceQuota(nightDate: String) =
+        enforceQuota(nightDate, com.sleepsentry.util.Prefs(ctx).storageQuotaMb)
+
+    // ---------------------------------------------------------------- 清除
+
+    /** 清除返回删除的文件数与释放的字节数 */
+    fun clearAll(): Pair<Int, Long> {
+        var n = 0
+        var bytes = 0L
+        (audioDir.listFiles() ?: emptyArray()).forEach {
+            bytes += it.length()
+            if (it.delete()) n++
+        }
+        (nightsDir.listFiles() ?: emptyArray()).forEach { it.delete() }
+        return n to bytes
+    }
+
+    /** 只清某一晚的音频，保留当晚统计 */
+    fun clearAudioOf(nightDate: String): Long {
+        var bytes = 0L
+        audioItems(nightDate).forEach {
+            bytes += it.bytes
+            File(audioDir, it.name).delete()
+        }
+        val rec = load(nightDate)
+        if (rec != null) {
+            save(rec.copy(
+                events = rec.events.map { it.copy(audioFile = null) },
+                fullAudioFile = null
+            ))
+        }
+        return bytes
+    }
+
+    /** 全部音频总占用（设置页展示用） */
+    fun totalAudioBytes(): Long = (audioDir.listFiles()?.sumOf { it.length() } ?: 0L)
+
+    /** 按录音时间先后列出的片段（时间正序） */
+    fun listSegmentsChronological(nightDate: String): List<File> =
+        audioItems(nightDate).sortedBy { it.recordedAtMillis }
+            .map { File(audioDir, it.name) }
 
     fun formatDate(ms: Long): String = fmtDay.format(Date(ms))
     fun formatFull(ms: Long): String = fmtFull.format(Date(ms))
 
-    fun totalAudioBytes(): Long =
-        (audioDir.listFiles()?.sumOf { it.length() } ?: 0L)
 
     companion object {
         /** 事件音频环形池容量。15s × 50 段 × 32KB/s ≈ 24MB */

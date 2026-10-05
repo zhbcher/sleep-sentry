@@ -186,7 +186,7 @@ class SentryService : Service() {
         // 整夜音频必须边录边写：攒在内存里 8 小时约 900MB，必然 OOM
         var fullWriter: PcmStreamWriter? = if (prefs.keepFullAudio) {
             runCatching {
-                PcmStreamWriter(store.audioFile("full_${nightDay(System.currentTimeMillis())}.pcm"), sr)
+                PcmStreamWriter(store.audioFile(store.fullAudioFileName(nightDay(System.currentTimeMillis()))), sr)
             }.getOrNull()
         } else null
 
@@ -254,8 +254,9 @@ class SentryService : Service() {
                 // 取出"已确认"的新事件并落盘
                 for (e in detector.takeNewEvents()) {
                     val st = sliceFor(rolling, e.startSec, e.endSec, elapsed)
-                    val name = "seg_${day}_${"%04d".format(segSeq++)}.pcm"
-                    store.putSegment(day, st.first, name)
+                    val absMs = startMs + (e.startSec * 1000.0).toLong()
+                    val name = store.segmentFileName(day, absMs, segSeq++)
+                    store.putSegment(day, st.first, name, absMs)
                     events.add(e.toStored(name, 0.0, st.second))
                 }
 
@@ -275,8 +276,9 @@ class SentryService : Service() {
             for (e in detEvents) {
                 if (events.any { kotlin.math.abs(it.startSec - e.startSec) < 0.05 }) continue
                 val st = sliceFor(rolling, e.startSec, e.endSec, elapsed)
-                val name = "seg_${day}_${"%04d".format(segSeq++)}.pcm"
-                store.putSegment(day, st.first, name)
+                val absMs = startMs + (e.startSec * 1000.0).toLong()
+                val name = store.segmentFileName(day, absMs, segSeq++)
+                store.putSegment(day, st.first, name, absMs)
                 events.add(e.toStored(name, 0.0, st.second))
             }
 
@@ -328,7 +330,7 @@ class SentryService : Service() {
     ) {
         if (elapsed < 30.0) return     // 太短不记，避免垃圾数据
 
-        val fullAudioName = if (fullWriter != null && fullLenSec > 0) "full_$day.pcm" else null
+        val fullAudioName = if (fullWriter != null && fullLenSec > 0) store.fullAudioFileName(day) else null
 
         val rec = NightRecord(
             date = day,

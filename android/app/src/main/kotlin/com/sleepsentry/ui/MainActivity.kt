@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.LayoutInflater
+import android.graphics.Rect
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -23,6 +24,7 @@ import com.sleepsentry.R
 import com.sleepsentry.capture.MorningNotifier
 import com.sleepsentry.capture.SentryService
 import com.sleepsentry.dsp.Severity
+import com.sleepsentry.store.HourlyBuckets
 import com.sleepsentry.store.NightRecord
 import com.sleepsentry.store.NightStore
 import com.sleepsentry.store.StoredEvent
@@ -57,6 +59,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var timeline: TimelineView
     private lateinit var trend: TrendView
     private lateinit var lastNightHeader: TextView
+    private lateinit var hourlyChart: HourlyChartView
+    private lateinit var quotaText: TextView
+    private lateinit var quotaUsage: TextView
+    private lateinit var clearAllBtn: Button
+    private lateinit var sortBtn: Button
 
     private var current: NightRecord? = null
 
@@ -90,6 +97,23 @@ class MainActivity : AppCompatActivity() {
         timeline = findViewById(R.id.timeline)
         trend = findViewById(R.id.trend)
         lastNightHeader = findViewById(R.id.lastNightHeader)
+        hourlyChart = findViewById(R.id.hourlyChart)
+        quotaText = findViewById(R.id.quotaText)
+        quotaUsage = findViewById(R.id.quotaUsage)
+        clearAllBtn = findViewById(R.id.clearAllBtn)
+        sortBtn = findViewById(R.id.sortBtn)
+
+        // 配额：点击弹出选项
+        findViewById<View>(R.id.quotaRow).setOnClickListener { pickQuota() }
+        quotaText.setOnClickListener { pickQuota() }
+        // 清除全部
+        clearAllBtn.setOnClickListener { confirmClearAll() }
+        // 事件排序切换
+        sortBtn.setOnClickListener {
+            prefs.sortEventsByTime = !prefs.sortEventsByTime
+            renderReport()
+        }
+        hourlyChart.onHourClick = { hour -> scrollToHour(hour) }
 
         toggleBtn.setOnClickListener { onToggle() }
         findViewById<View>(R.id.windowRow).setOnClickListener {
@@ -222,6 +246,14 @@ class MainActivity : AppCompatActivity() {
                 "上次运行异常：${prefs.lastFailureReason}\n请检查：电池优化是否关闭、麦克风权限是否被收回。"
         }
         streakText.text = if (prefs.streakDays > 0) "已连续记录 ${prefs.streakDays} 晚" else ""
+        quotaText.text = Prefs.quotaText(prefs.storageQuotaMb)
+        val rec = current ?: store.latest()
+        quotaUsage.text = if (rec == null) {
+            "还没有录音记录"
+        } else {
+            "当前占用 ${Prefs.usageText(store.audioUsageBytes(rec.date))}" +
+                if (prefs.keepFullAudio) " · 整夜留存已开" else ""
+        }
         updateLive()
     }
 
@@ -292,7 +324,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         timeline.setData(rec.envelope, rec.events, rec.recordedSec)
+        hourlyChart.setData(
+            HourlyBuckets.count(rec.events.map { it.startSec }, rec.startMillis),
+            HourlyBuckets.coveredRange(rec.recordedSec, rec.startMillis)
+        )
         renderEventList(rec)
+        renderSettings()
     }
 
     private fun renderEventList(rec: NightRecord) {
@@ -302,7 +339,14 @@ class MainActivity : AppCompatActivity() {
         val base = rec.startMillis
         val inflater = LayoutInflater.from(this)
 
-        rec.events.sortedByDescending { it.silenceSec }.forEach { e ->
+        // 默认按时间先后（用户明确要求）；可切换成"最严重的排前面"
+        val ordered = if (prefs.sortEventsByTime) {
+            rec.events.sortedBy { it.startSec }
+        } else {
+            rec.events.sortedByDescending { it.silenceSec }
+        }
+        sortBtn.text = if (prefs.sortEventsByTime) "按时间排序 ✓" else "按严重程度排序"
+        ordered.forEach { e ->
             val row = inflater.inflate(R.layout.item_event, eventList, false)
             row.findViewById<TextView>(R.id.eventTime).text =
                 sdf.format(Date(base + (e.startSec * 1000).toLong()))
@@ -334,6 +378,72 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderTrend() {
         trend.setData(store.list())
+    }
+
+    /**
+     * 点击柱状图：把该钟点的事件滚到可见位置。
+     * 直接按"当前显示顺序"算出第几行，比去遍历子 View 反查文案可靠得多。
+     */
+    private fun scrollToHour(hour: Int) {
+        val rec = current ?: return
+        val inHour = rec.events.filter { eventHourOf(rec, it) == hour }
+        if (inHour.isEmpty()) {
+            toast("%02d:00 这一段没有记录".format(hour))
+            return
+        }
+        val worst = inHour.maxByOrNull { it.silenceSec }!!
+        val ordered = if (prefs.sortEventsByTime) {
+            rec.events.sortedBy { it.startSec }
+        } else {
+            rec.events.sortedByDescending { it.silenceSec }
+        }
+        val row = ordered.indexOf(worst)
+        val view = if (row in 0 until eventList.childCount) eventList.getChildAt(row) else null
+        if (view != null) {
+            view.requestRectangleOnScreen(Rect(0, 0, view.width, view.height), true)
+            (view as? View)?.let { v ->
+                v.setBackgroundResource(R.drawable.row_bg_highlight)
+                v.postDelayed({ v.setBackgroundResource(R.drawable.row_bg) }, 1500)
+            }
+        }
+        toast("%02d:00 起 %d 次，最长静默 %d 秒".format(hour, inHour.size, worst.silenceSec.roundToInt()))
+    }
+
+    private fun eventHourOf(rec: NightRecord, e: StoredEvent): Int =
+        HourlyBuckets.localHour(rec.startMillis + (e.startSec * 1000.0).toLong())
+
+    private fun pickQuota() {
+        val opts = Prefs.QUOTA_OPTIONS_MB.map { Prefs.quotaText(it) }.toTypedArray()
+        val cur = Prefs.QUOTA_OPTIONS_MB.indexOfFirst { it == prefs.storageQuotaMb }
+            .let { if (it >= 0) it else 2 }
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("每晚录音占用上限")
+            .setSingleChoiceItems(opts, cur) { d, which ->
+                prefs.storageQuotaMb = Prefs.QUOTA_OPTIONS_MB[which]
+                renderSettings()
+                toast("已设为 ${Prefs.quotaText(prefs.storageQuotaMb)}，超出后会自动删最旧的录音")
+                d.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun confirmClearAll() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("清除所有录音与记录？")
+            .setMessage("会删除全部音频文件和历史报告，且不可恢复。\n\n监听开关与时段设置会保留。")
+            .setPositiveButton("清除") { _, _ ->
+                val (files, bytes) = store.clearAll()
+                prefs.streakDays = 0
+                prefs.lastRunMillis = 0
+                current = null
+                renderSettings()
+                renderReport()
+                renderTrend()
+                toast("已清除 $files 个文件，释放 ${Prefs.usageText(bytes)}")
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()

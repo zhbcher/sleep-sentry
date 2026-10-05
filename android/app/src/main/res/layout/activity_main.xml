@@ -148,6 +148,45 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/quotaRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="每晚录音占用上限"
+                        android:textColor="@color/text"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/quotaUsage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="@color/textDim"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/quotaText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:textColor="@color/brand"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
             <Switch
                 android:id="@+id/fullAudioSwitch"
                 android:layout_width="match_parent"
@@ -235,12 +274,52 @@
                 android:textSize="12sp" />
 
             <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="end">
+
+                <Button
+                    android:id="@+id/sortBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="0dp"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/eventList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:orientation="vertical" />
         </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="昨夜分布"
+            android:textColor="@color/text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <com.sleepsentry.ui.HourlyChartView
+            android:id="@+id/hourlyChart"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/card_bg" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="横轴是钟点，浅蓝底为当晚实际有录音的时段。点击柱子可跳到该时段的事件。"
+            android:textColor="@color/textDim"
+            android:textSize="12sp" />
 
         <!-- 趋势 -->
         <TextView
@@ -258,6 +337,24 @@
             android:layout_height="110dp"
             android:layout_marginTop="8dp"
             android:background="@drawable/card_bg" />
+
+        <Button
+            android:id="@+id/clearAllBtn"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/bad"
+            android:text="清除所有录音与记录"
+            android:textColor="#FFFFFFFF"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="会删掉全部音频文件与历史报告，不可恢复。设置与监听开关不受影响。"
+            android:textColor="@color/textDim"
+            android:textSize="12sp" />
 
         <TextView
             android:layout_width="match_parent"
