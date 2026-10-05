@@ -3,68 +3,98 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
+    android:clipToPadding="false"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="20dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="30dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="设置"
+            android:text="偏好设置"
             android:textColor="@color/text"
-            android:textSize="20sp"
+            android:textSize="27sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="让夜间记录更适合你的习惯"
+            android:textColor="@color/textDim"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="夜间安排"
+            android:textColor="@color/textDim"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="9dp"
             android:background="@drawable/card_bg"
             android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="时间"
-                android:textColor="@color/text"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+            android:padding="17dp">
 
             <LinearLayout
                 android:id="@+id/windowRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal">
+                android:background="@drawable/setting_time_bg"
+                android:clickable="true"
+                android:focusable="true"
+                android:orientation="vertical"
+                android:padding="14dp">
 
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_window"
-                    android:textColor="@color/text"
-                    android:textSize="14sp" />
+                    android:text="监听时段"
+                    android:textColor="@color/textDim"
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/windowText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/brand"
-                    android:textSize="14sp"
+                    android:layout_marginTop="5dp"
+                    android:textColor="@color/text"
+                    android:textSize="25sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="仅在设定时段内开始守夜"
+                    android:textColor="@color/textDim"
+                    android:textSize="11sp" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/morningRow"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal">
+                android:layout_height="54dp"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="6dp"
+                android:paddingEnd="4dp">
 
                 <TextView
                     android:layout_width="0dp"
@@ -84,27 +114,85 @@
             </LinearLayout>
         </LinearLayout>
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="录音与存储"
+            android:textColor="@color/textDim"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="9dp"
             android:background="@drawable/card_bg"
             android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="录音与存储"
-                android:textColor="@color/text"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+            android:padding="17dp">
 
             <LinearLayout
                 android:id="@+id/quotaRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="4dp"
+                android:paddingBottom="10dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="每晚占用上限"
+                        android:textColor="@color/text"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/quotaUsage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/textDim"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/quotaText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:padding="8dp"
+                    android:textColor="@color/brand"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/quotaProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="0"
+                android:progressBackgroundTint="@color/surfaceSoft"
+                android:progressTint="@color/brandDim" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <LinearLayout
@@ -116,112 +204,112 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="每晚录音占用上限"
+                        android:text="保留整夜音频"
                         android:textColor="@color/text"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/quotaUsage"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="3dp"
+                        android:text="约 110 MB / 晚 · 受占用上限约束"
                         android:textColor="@color/textDim"
-                        android:textSize="12sp" />
+                        android:textSize="11sp" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/quotaText"
+                <Switch
+                    android:id="@+id/fullAudioSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:textColor="@color/brand"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:contentDescription="保留整夜音频"
+                    android:showText="false"
+                    android:thumbTint="@color/brand"
+                    android:trackTint="@color/surfaceSoft" />
             </LinearLayout>
-
-            <Switch
-                android:id="@+id/fullAudioSwitch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="保留整夜音频（约 110MB/晚，受占用上限约束）"
-                android:textColor="@color/text"
-                android:textSize="13sp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="默认只保留事件前后片段，约 3MB/晚。音频只在本机处理，不上传。"
+                android:layout_marginTop="7dp"
+                android:text="默认只保留事件前后片段，约 3 MB / 晚。音频仅在本机处理。"
                 android:textColor="@color/textDim"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
         </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="本地数据"
+            android:textColor="@color/textDim"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="9dp"
             android:background="@drawable/card_bg"
             android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="数据"
-                android:textColor="@color/text"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+            android:padding="17dp">
 
             <TextView
                 android:id="@+id/dataStat"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:lineSpacingExtra="3dp"
                 android:textColor="@color/textDim"
                 android:textSize="13sp" />
 
             <Button
                 android:id="@+id/clearAudioBtn"
+                style="@style/SecondaryActionButton"
                 android:layout_width="match_parent"
                 android:layout_height="46dp"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="@color/bad"
+                android:layout_marginTop="13dp"
+                android:backgroundTint="@color/surfaceSoft"
                 android:text="清除所有录音文件"
-                android:textColor="#FFFFFFFF"
-                android:textSize="14sp" />
+                android:textColor="@color/bad"
+                android:textSize="13sp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="只删音频文件。历史报告、日历色块与趋势统计全部保留 —— 统计才是长期积累的价值。"
+                android:text="只删除音频，历史报告、日历和趋势仍会保留。"
                 android:textColor="@color/textDim"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
 
             <Button
                 android:id="@+id/clearAllBtn"
+                style="@style/SecondaryActionButton"
                 android:layout_width="match_parent"
                 android:layout_height="46dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="13dp"
+                android:backgroundTint="@color/surfaceSoft"
                 android:text="清空全部数据（含历史报告）"
-                android:textColor="@color/bad" />
+                android:textColor="@color/bad"
+                android:textSize="13sp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="会一并删除历史报告，日历与趋势会变空。不可恢复。"
+                android:layout_marginTop="6dp"
+                android:text="会删除录音文件与所有历史报告，不可恢复。"
                 android:textColor="@color/textDim"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/privacy_bg"
+            android:lineSpacingExtra="3dp"
+            android:padding="14dp"
             android:text="@string/report_disclaimer"
             android:textColor="@color/textDim"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 </ScrollView>

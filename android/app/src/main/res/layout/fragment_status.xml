@@ -3,78 +3,162 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
+    android:clipToPadding="false"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="20dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="28dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/app_name"
-            android:textColor="@color/text"
-            android:textSize="26sp"
+            android:letterSpacing="0.12"
+            android:text="SLEEP  /  NIGHT WATCH"
+            android:textColor="@color/textDim"
+            android:textSize="10sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="@string/tagline"
-            android:textColor="@color/textDim"
-            android:textSize="13sp" />
+            android:layout_marginTop="6dp"
+            android:text="今晚，交给守夜"
+            android:textColor="@color/text"
+            android:textSize="27sp"
+            android:textStyle="bold" />
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/card_bg"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_height="310dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/hero_bg"
+            android:padding="18dp">
 
             <TextView
-                android:id="@+id/stateText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/state_idle"
-                android:textColor="@color/brand"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/liveText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:text="今晚 · 夜间监听"
                 android:textColor="@color/textDim"
                 android:textSize="13sp" />
 
-            <TextView
-                android:id="@+id/streakText"
-                android:layout_width="wrap_content"
+            <FrameLayout
+                android:layout_width="130dp"
+                android:layout_height="130dp"
+                android:layout_gravity="end|top"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="0dp">
+
+                <View
+                    android:layout_width="130dp"
+                    android:layout_height="130dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/orbit_outer" />
+
+                <View
+                    android:layout_width="104dp"
+                    android:layout_height="104dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/orbit_inner" />
+
+                <ImageView
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="月牙"
+                    android:src="@drawable/moon_crescent" />
+
+                <View
+                    android:layout_width="6dp"
+                    android:layout_height="6dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:background="@drawable/star_dot" />
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_gravity="bottom|start"
+                    android:layout_marginBottom="29dp"
+                    android:layout_marginStart="19dp"
+                    android:background="@drawable/star_dot" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="138dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/good"
-                android:textSize="13sp" />
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginTop="-12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/stateText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="未开启"
+                    android:textColor="@color/brand"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="138dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="插上电源，进入监听时段后自动开始记录。"
+                    android:textColor="@color/textDim"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_gravity="start|bottom"
+                android:layout_marginBottom="64dp"
+                android:background="@drawable/chip_bg"
+                android:gravity="center"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="监听时段  22:30—07:30"
+                android:textColor="@color/brand"
+                android:textSize="11sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/toggleBtn"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:text="@string/action_enable" />
-        </LinearLayout>
+                android:layout_height="52dp"
+                android:layout_gravity="bottom"
+                android:backgroundTint="@color/brand"
+                android:minHeight="52dp"
+                android:text="开启守夜"
+                android:textColor="@color/onBrand"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/liveText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/privacy_bg"
+            android:padding="12dp"
+            android:textColor="@color/good"
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/warnText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:background="@drawable/warn_bg"
-            android:padding="12dp"
+            android:padding="14dp"
             android:textColor="@color/warn"
             android:textSize="13sp"
             android:visibility="gone" />
@@ -83,41 +167,94 @@
             android:id="@+id/quickRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="20dp"
             android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="昨夜速览"
+                    android:textColor="@color/textDim"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="最近一晚"
+                    android:textColor="@color/textFaint"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/quickText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:textColor="@color/text"
+                android:textSize="21sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/quickSub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/textDim"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/goReportBtn"
+                style="@style/SecondaryActionButton"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="12dp"
+                android:text="查看完整报告" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/streakText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:drawablePadding="9dp"
+            android:textColor="@color/text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/privacy_bg"
             android:orientation="vertical"
             android:padding="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="昨晚速览"
-                android:textColor="@color/text"
-                android:textSize="15sp"
+                android:text="本机守护"
+                android:textColor="@color/brand"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/quickText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/text"
-                android:textSize="15sp" />
-
-            <TextView
-                android:id="@+id/quickSub"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="7dp"
+                android:text="音频仅在手机本地处理，不会上传。把手机放床头并接上充电器即可。"
                 android:textColor="@color/textDim"
-                android:textSize="13sp" />
-
-            <Button
-                android:id="@+id/goReportBtn"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="10dp"
-                android:text="查看完整报告" />
+                android:textSize="12sp" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

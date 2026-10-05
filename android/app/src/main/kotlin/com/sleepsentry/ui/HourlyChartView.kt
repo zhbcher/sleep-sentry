@@ -24,20 +24,20 @@ class HourlyChartView @JvmOverloads constructor(
 ) : View(context, attrs, defStyle) {
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val bandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFEFF4F9.toInt() }
+    private val bandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF1D3442.toInt() }
     private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 1f; color = 0xFFDCE4EC.toInt()
+        style = Paint.Style.STROKE; strokeWidth = 1f; color = 0xFF334457.toInt()
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF6B7280.toInt(); textSize = 19f
+        color = 0xFF94A5B7.toInt(); textSize = 19f
     }
     private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF6B7280.toInt(); textSize = 22f
+        color = 0xFF94A5B7.toInt(); textSize = 22f
     }
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF9AA4B2.toInt(); textSize = 26f; textAlign = Paint.Align.CENTER
+        color = 0xFF94A5B7.toInt(); textSize = 26f; textAlign = Paint.Align.CENTER
     }
-    private val hitPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x223B6FA0 }
+    private val hitPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x3373D5B2 }
 
     private var counts = IntArray(HourlyBuckets.HOURS)
     private var covered = IntArray(2)
@@ -70,7 +70,7 @@ class HourlyChartView @JvmOverloads constructor(
 
         val padL = 10f
         val padR = 10f
-        val padT = 26f
+        val padT = 15f
         val padB = 24f
         val plotW = w - padL - padR
         val plotH = h - padT - padB
@@ -81,8 +81,6 @@ class HourlyChartView @JvmOverloads constructor(
             canvas.drawText("这一晚没有记录到疑似事件", w / 2, h / 2, emptyPaint)
             return
         }
-
-        canvas.drawText("每小时疑似事件次数", padL, 18f, titlePaint)
 
         val slot = plotW / HourlyBuckets.HOURS
         val maxV = max(1, counts.maxOrNull() ?: 1)
@@ -109,9 +107,9 @@ class HourlyChartView @JvmOverloads constructor(
                 val bh = (c.toFloat() / maxV) * plotH
                 val bw = slot * 0.62f
                 barPaint.color = when {
-                    c <= 1 -> 0xFF6FA98A.toInt()
-                    c <= 3 -> 0xFFD9B96A.toInt()
-                    else -> 0xFFD08A7A.toInt()
+                    c <= 1 -> 0xFF73D5B2.toInt()
+                    c <= 3 -> 0xFFE9C57E.toInt()
+                    else -> 0xFFFF9C81.toInt()
                 }
                 canvas.drawRoundRect(
                     RectF(cx - bw / 2, padT + plotH - bh, cx + bw / 2, padT + plotH),

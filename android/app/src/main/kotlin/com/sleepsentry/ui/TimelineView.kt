@@ -23,19 +23,19 @@ class TimelineView @JvmOverloads constructor(
 ) : View(context, attrs, defStyle) {
 
     private val envPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = 0xFF9BB7CC.toInt()
+        style = Paint.Style.FILL; color = 0xFF486C72.toInt()
     }
     private val markPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = 0xFFC25A3E.toInt()
+        style = Paint.Style.FILL; color = 0xFFFF9C81.toInt()
     }
     private val markStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 2f; color = 0xFF8C3A26.toInt()
+        style = Paint.Style.STROKE; strokeWidth = 2f; color = 0xFFFFC9B8.toInt()
     }
     private val hitPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = 0x33C25A3E
+        style = Paint.Style.FILL; color = 0x44FF9C81
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF6B7280.toInt(); textSize = 24f
+        color = 0xFF94A5B7.toInt(); textSize = 24f
     }
 
     private var envelope: FloatArray = FloatArray(0)
@@ -62,7 +62,7 @@ class TimelineView @JvmOverloads constructor(
             drawContent(canvas)
         } catch (e: Exception) {
             android.util.Log.w("TimelineView", "绘制失败，已跳过时间轴", e)
-            canvas.drawColor(Color.WHITE)
+            canvas.drawColor(Color.TRANSPARENT)
         }
     }
 
@@ -77,9 +77,8 @@ class TimelineView @JvmOverloads constructor(
         val chartBottom = h - labelH
 
         // 背景
-        canvas.drawColor(Color.WHITE)
         val frame = RectF(0f, chartTop, w, chartBottom)
-        canvas.drawRoundRect(frame, 8f, 8f, Paint().apply { color = 0xFFF2F5F8.toInt() })
+        canvas.drawRoundRect(frame, 12f, 12f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF1A293C.toInt() })
 
         // 包络：把 dB 映射到高度，低能量压到底部
         if (envelope.isNotEmpty()) {

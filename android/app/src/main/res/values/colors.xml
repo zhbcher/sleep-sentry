@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand">#FF2C5F8A</color>
-    <color name="brandDim">#FF6E93B4</color>
-    <color name="brandDark">#FF1B3B56</color>
-    <color name="bg">#FFF6F8FA</color>
-    <color name="card">#FFFFFFFF</color>
-    <color name="text">#FF1A1C1E</color>
-    <color name="textDim">#FF6B7280</color>
-    <color name="good">#FF2E7D5B</color>
-    <color name="warn">#FFB4761E</color>
-    <color name="bad">#FFB03A3A</color>
-    <color name="accent">#FFD08A3E</color>
+    <color name="brand">#FFB9F4D9</color>
+    <color name="brandDim">#FF73D5B2</color>
+    <color name="brandDark">#FF0B1220</color>
+    <color name="bg">#FF0B1220</color>
+    <color name="card">#FF101A29</color>
+    <color name="surface">#FF141F30</color>
+    <color name="surfaceRaised">#FF1A293C</color>
+    <color name="surfaceSoft">#FF223449</color>
+    <color name="hero">#FF14253A</color>
+    <color name="line">#FF28384B</color>
+    <color name="text">#FFF2F5F8</color>
+    <color name="textDim">#FF94A5B7</color>
+    <color name="textFaint">#FF63768C</color>
+    <color name="good">#FF73D5B2</color>
+    <color name="warn">#FFE9C57E</color>
+    <color name="bad">#FFFF9C81</color>
+    <color name="accent">#FF9CAFE7</color>
+    <color name="onBrand">#FF12251F</color>
 </resources>

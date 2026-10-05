@@ -3,124 +3,179 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
+    android:clipToPadding="false"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="20dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="30dp">
 
         <TextView
             android:id="@+id/reportTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="报告"
+            android:text="昨夜报告"
             android:textColor="@color/text"
-            android:textSize="20sp"
+            android:textSize="27sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/emptyText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/no_record"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/card_bg"
+            android:lineSpacingExtra="4dp"
+            android:padding="20dp"
+            android:text="还没有记录。插上充电器、放手机在床头，第二天早上这里会有内容。"
             android:textColor="@color/textDim"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
 
         <LinearLayout
             android:id="@+id/reportCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="16dp"
             android:background="@drawable/card_bg"
             android:orientation="vertical"
-            android:padding="16dp"
+            android:padding="18dp"
             android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="整体观察"
+                android:textColor="@color/textDim"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/reportHeadline"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
                 android:textColor="@color/text"
-                android:textSize="17sp"
+                android:textSize="23sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/reportSub"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="8dp"
+                android:lineSpacingExtra="3dp"
                 android:textColor="@color/textDim"
                 android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/reportLevel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/chip_bg"
+                android:padding="12dp"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="15sp"
+                android:layout_marginTop="19dp"
+                android:text="整夜声音时间线"
+                android:textColor="@color/text"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
             <com.sleepsentry.ui.TimelineView
                 android:id="@+id/timeline"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
-                android:layout_marginTop="12dp" />
+                android:layout_height="126dp"
+                android:layout_marginTop="9dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="整夜声音能量与事件标记（橙色=疑似呼吸暂停，点击可回听）"
+                android:layout_marginTop="8dp"
+                android:text="橙色标记为疑似呼吸暂停，点击标记可回听。"
                 android:textColor="@color/textDim"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/hourlyHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="每小时分布"
+            android:textColor="@color/text"
+            android:textSize="19sp"
+            android:textStyle="bold" />
 
         <com.sleepsentry.ui.HourlyChartView
             android:id="@+id/hourlyChart"
             android:layout_width="match_parent"
-            android:layout_height="150dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="174dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/card_bg" />
 
         <TextView
+            android:id="@+id/hourlyHelp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="横轴是钟点，浅蓝底为当晚实际有录音的时段。点击柱子跳到该时段事件。"
+            android:layout_marginTop="8dp"
+            android:text="浅色区间表示当晚实际有录音的时段。点击柱状图可定位事件。"
             android:textColor="@color/textDim"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
 
         <LinearLayout
+            android:id="@+id/eventHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="end">
+            android:layout_marginTop="22dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="事件片段"
+                android:textColor="@color/text"
+                android:textSize="19sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/sortBtn"
+                style="@style/SecondaryActionButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="38dp"
                 android:minWidth="0dp"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp"
-                android:textSize="12sp" />
+                android:paddingStart="13dp"
+                android:paddingEnd="13dp"
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/eventList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:orientation="vertical" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/privacy_bg"
+            android:lineSpacingExtra="3dp"
+            android:padding="14dp"
             android:text="@string/report_disclaimer"
             android:textColor="@color/textDim"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 </ScrollView>

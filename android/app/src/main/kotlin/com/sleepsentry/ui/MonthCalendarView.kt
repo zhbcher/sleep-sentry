@@ -9,6 +9,7 @@ import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import com.sleepsentry.R
 import com.sleepsentry.dsp.Severity
 import java.util.Calendar
 
@@ -18,7 +19,7 @@ import java.util.Calendar
  * v1.2.0 用**白字画浅灰格子**，对比度只有 1.14:1，用户反馈"看不清日期"。
  * 两处结构性修正：
  *  1. **文字颜色按背景亮度自适应**（见 CalendarStyle），所有状态都 ≥ WCAG AA 4.5:1，
- *     并有单元测试钉死 —— 这次不再靠眼睛判断"清不清"
+ *     并有单元测试钉死，日期在夜间色块上仍然清楚
  *  2. **格里直接显示当晚的事件次数**，成为数据日历而不是纯色块，
  *     色弱用户不靠颜色也能读懂
  *
@@ -40,24 +41,25 @@ class MonthCalendarView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER; textSize = 22f
     }
     private val weekPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF6B7280.toInt(); textSize = 24f; textAlign = Paint.Align.CENTER
+        color = context.getColor(R.color.textDim); textSize = 24f; textAlign = Paint.Align.CENTER
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
     private val weekEndPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF9AA4B2.toInt(); textSize = 24f; textAlign = Paint.Align.CENTER
+        color = context.getColor(R.color.textFaint); textSize = 24f; textAlign = Paint.Align.CENTER
     }
     private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF1A1C1E.toInt(); textSize = 34f; textAlign = Paint.Align.CENTER
+        color = context.getColor(R.color.text); textSize = 34f; textAlign = Paint.Align.CENTER
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
     private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF2C5F8A.toInt(); textSize = 46f; textAlign = Paint.Align.CENTER
+        color = context.getColor(R.color.brandDim); strokeWidth = 3f
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND
     }
     private val todayRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 3.5f; color = 0xFF2C5F8A.toInt()
+        style = Paint.Style.STROKE; strokeWidth = 2.5f; color = context.getColor(R.color.brandDim)
     }
     private val selectedRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 5f; color = 0xFFD08A3E.toInt()
+        style = Paint.Style.STROKE; strokeWidth = 3.5f; color = context.getColor(R.color.brand)
     }
 
     private var year = 0
@@ -79,7 +81,7 @@ class MonthCalendarView @JvmOverloads constructor(
         val c = Calendar.getInstance()
         year = c.get(Calendar.YEAR)
         month = c.get(Calendar.MONTH)
-        setBackgroundColor(Color.WHITE)
+        setBackgroundColor(Color.TRANSPARENT)
     }
 
     fun setMonth(y: Int, m: Int) { year = y; month = m; invalidate() }
@@ -119,8 +121,13 @@ class MonthCalendarView @JvmOverloads constructor(
 
         // 月份标题 + 翻页箭头
         canvas.drawText(title(), w / 2, 40f, titlePaint)
-        canvas.drawText("‹", padX + arrowW / 2, 44f, arrowPaint)
-        canvas.drawText("›", w - padX - arrowW / 2, 44f, arrowPaint)
+        val arrowY = headerH / 2
+        val leftX = padX + arrowW / 2
+        canvas.drawLine(leftX + 4f, arrowY - 7f, leftX - 3f, arrowY, arrowPaint)
+        canvas.drawLine(leftX - 3f, arrowY, leftX + 4f, arrowY + 7f, arrowPaint)
+        val rightX = w - padX - arrowW / 2
+        canvas.drawLine(rightX - 4f, arrowY - 7f, rightX + 3f, arrowY, arrowPaint)
+        canvas.drawLine(rightX + 3f, arrowY, rightX - 4f, arrowY + 7f, arrowPaint)
         arrowLeftHit.set(0f, 0f, padX * 2 + arrowW, headerH)
         arrowRightHit.set(w - padX * 2 - arrowW, 0f, w, headerH)
 
@@ -164,7 +171,7 @@ class MonthCalendarView @JvmOverloads constructor(
             if (isThisMonth && d == todayDay) canvas.drawRoundRect(rect, 12f, 12f, todayRing)
             if (d == selectedDay) canvas.drawRoundRect(rect, 12f, 12f, selectedRing)
 
-            // 文字颜色随背景自适应：浅格子黑字、深格子白字
+            // 文字颜色随背景亮度自适应，确保日期数字始终清楚
             val tc = CalendarStyle.bestTextColor(state)
             dayPaint.color = tc
             countPaint.color = tc

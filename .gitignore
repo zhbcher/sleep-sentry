@@ -1,6 +1,19 @@
+# 构建产物
 android/build/
 android/app/build/
 android/.gradle/
-android/local.properties
-data/
 *.apk
+*.aab
+
+# 本机路径（含 SDK 绝对路径，不应进仓库）
+android/local.properties
+
+# 训练/验证用大数据集（APSAA 3.7GB，Zenodo CC-BY-4.0 可自行下载）
+data/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+*.iml

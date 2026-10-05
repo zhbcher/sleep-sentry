@@ -61,18 +61,32 @@ class CalendarContrastTest {
     }
 
     @Test
-    fun textColorFollowsBackgroundLuminance() {
-        // 深色背景 → 白字；浅色背景 → 黑字
-        assertEquals(CalendarStyle.TEXT_LIGHT, CalendarStyle.textColorFor(CalendarStyle.SEVERE))
-        assertEquals(CalendarStyle.TEXT_DARK, CalendarStyle.textColorFor(CalendarStyle.NO_RECORD))
-        assertEquals(CalendarStyle.TEXT_DARK, CalendarStyle.textColorFor(CalendarStyle.MILD))
+    fun textColorAlwaysPicksTheHigherContrastOption() {
+        // 不写死"哪种底色该配哪种字色"，只断言**规则**：
+        // 无论浅色还是深色主题，都必须选对比度更高的那个。
+        // （v1.2.x 的深色主题重设计后，原先"浅底配黑字"的硬编码断言就过时了。）
+        MonthCalendarView.DayState.values().forEach { st ->
+            val bg = CalendarStyle.colorFor(st)
+            val picked = CalendarStyle.textColorFor(bg)
+            val crDark = CalendarStyle.contrastRatio(bg, CalendarStyle.TEXT_DARK)
+            val crLight = CalendarStyle.contrastRatio(bg, CalendarStyle.TEXT_LIGHT)
+            val expected = if (crDark >= crLight) CalendarStyle.TEXT_DARK else CalendarStyle.TEXT_LIGHT
+            assertEquals("${DayStateMapper.label(st)} 的文字色应取对比度更高的一侧", expected, picked)
+        }
     }
 
+    /**
+     * 相邻档必须"一眼能分" —— 用感知色差 ΔE 判定，不用亮度单维度。
+     *
+     * 为什么换度量：深色主题里相邻档靠**色相**拉开（冷 → 绿 → 琥珀 → 砖红 → 红），
+     * 亮度差可以很小但仍然一眼可辨。反过来浅色主题靠亮度拉开。
+     * 两种主题下 ΔE 都是可靠的判据，亮度不是。
+     */
     @Test
     fun adjacentSeverityStatesAreDistinguishable() {
-        // 相邻分档之间也要有可见差别，否则"颜色深浅表示严重程度"这句话就不成立
         val order = listOf(
             MonthCalendarView.DayState.NO_RECORD,
+            MonthCalendarView.DayState.INSUFFICIENT,
             MonthCalendarView.DayState.NORMAL,
             MonthCalendarView.DayState.MILD,
             MonthCalendarView.DayState.MODERATE,
@@ -81,25 +95,61 @@ class CalendarContrastTest {
         for (i in 0 until order.size - 1) {
             val a = CalendarStyle.colorFor(order[i])
             val b = CalendarStyle.colorFor(order[i + 1])
+            val de = CalendarStyle.deltaE(a, b)
             assertTrue(
-                "${order[i]} 与 ${order[i + 1]} 颜色完全相同（#%06X）".format(a),
-                a != b
-            )
-            assertTrue(
-                "${DayStateMapper.label(order[i])} 与 ${DayStateMapper.label(order[i + 1])} 亮度差太小，视觉上分不出",
-                Math.abs(CalendarStyle.relativeLuminance(a) - CalendarStyle.relativeLuminance(b)) > 0.02
+                "${DayStateMapper.label(order[i])} 与 ${DayStateMapper.label(order[i + 1])} " +
+                    "感知色差只有 %.1f（#%06X vs #%06X），低于 %.0f 会被看成同一档".format(
+                        de, a, b, CalendarStyle.MIN_DELTA_E),
+                de >= CalendarStyle.MIN_DELTA_E
             )
         }
     }
 
+    /**
+     * 严重程度的排序轴是**色相（暖度）**，不是亮度。
+     *
+     * 设计稿里明确写着"颜色越暖，代表当晚记录到的疑似事件越多"，
+     * 实测配色也确实如此：平稳(绿 165°) → 轻度(琥珀 29°) → 中度(砖红 11°) → 较高(红 7°)。
+     *
+     * 试过按亮度排序，不成立：轻度 L*=38.3 比中度 L*=36.1 反而更亮，
+     * 按亮度排会出现"轻度比中度更醒目"的错觉。
+     * 这也是为什么判"分不分得清"要用感知色差 ΔE 而不是亮度差。
+     */
     @Test
-    fun statesAreOrderedByLuminanceForSevereSide() {
-        // 越严重颜色越深（亮度越低），这是"颜色深浅表示严重程度"的前提
-        val lNormal = CalendarStyle.relativeLuminance(CalendarStyle.NORMAL)
-        val lMild = CalendarStyle.relativeLuminance(CalendarStyle.MILD)
-        val lMod = CalendarStyle.relativeLuminance(CalendarStyle.MODERATE)
-        val lSev = CalendarStyle.relativeLuminance(CalendarStyle.SEVERE)
-        assertTrue("重度应比中度深", lSev < lMod)
-        assertTrue("中度应比轻度深", lMod < lMild)
+    fun severityIsMonotonicInWarmth() {
+        val ramp = listOf(
+            MonthCalendarView.DayState.NORMAL,
+            MonthCalendarView.DayState.MILD,
+            MonthCalendarView.DayState.MODERATE,
+            MonthCalendarView.DayState.SEVERE
+        )
+        val warm = ramp.map { CalendarStyle.warmness(CalendarStyle.colorFor(it)) }
+        for (i in 1 until warm.size) {
+            assertTrue(
+                "${DayStateMapper.label(ramp[i])} 应比 ${DayStateMapper.label(ramp[i - 1])} 更暖" +
+                    "（暖度 ${"%.1f".format(warm[i])} vs ${"%.1f".format(warm[i - 1])}，" +
+                    "色相 ${"%.0f".format(CalendarStyle.hueDegrees(CalendarStyle.colorFor(ramp[i])))}°）",
+                warm[i] > warm[i - 1]
+            )
+        }
+    }
+
+    /** 无记录 / 信号不足 是"没有结论"，不该被读成"程度轻" */
+    @Test
+    fun nonRecordedStatesAreCoolerThanRecordedOnes() {
+        val cool = listOf(
+            CalendarStyle.warmness(CalendarStyle.colorFor(MonthCalendarView.DayState.NO_RECORD)),
+            CalendarStyle.warmness(CalendarStyle.colorFor(MonthCalendarView.DayState.INSUFFICIENT))
+        )
+        val warmestRecorded = maxOf(
+            CalendarStyle.warmness(CalendarStyle.colorFor(MonthCalendarView.DayState.NORMAL)),
+            CalendarStyle.warmness(CalendarStyle.colorFor(MonthCalendarView.DayState.SEVERE))
+        )
+        for ((i, w) in cool.withIndex()) {
+            assertTrue(
+                "无结论的第 $i 档比" + "\"有记录但最轻/最重\"还暖，会被误读为程度更重",
+                w < warmestRecorded
+            )
+        }
     }
 }

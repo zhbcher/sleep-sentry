@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.Switch
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -23,6 +24,7 @@ class SettingsFragment : Fragment() {
     private lateinit var morningText: TextView
     private lateinit var quotaText: TextView
     private lateinit var quotaUsage: TextView
+    private lateinit var quotaProgress: ProgressBar
     private lateinit var fullAudioSwitch: Switch
     private lateinit var dataStat: TextView
     private lateinit var clearAudioBtn: Button
@@ -38,6 +40,7 @@ class SettingsFragment : Fragment() {
         morningText = view.findViewById(R.id.morningText)
         quotaText = view.findViewById(R.id.quotaText)
         quotaUsage = view.findViewById(R.id.quotaUsage)
+        quotaProgress = view.findViewById(R.id.quotaProgress)
         fullAudioSwitch = view.findViewById(R.id.fullAudioSwitch)
         dataStat = view.findViewById(R.id.dataStat)
         clearAudioBtn = view.findViewById(R.id.clearAudioBtn)
@@ -84,6 +87,11 @@ class SettingsFragment : Fragment() {
             "最近一晚占用 ${Prefs.usageText(store.audioUsageBytes(rec.date))}" +
                 if (prefs.keepFullAudio) " · 整夜留存已开" else ""
         }
+        val latestUsage = rec?.let { store.audioUsageBytes(it.date) } ?: 0L
+        val quotaBytes = prefs.storageQuotaMb.toLong() * 1024L * 1024L
+        quotaProgress.progress = if (quotaBytes > 0L) {
+            ((latestUsage * 100L) / quotaBytes).toInt().coerceIn(0, 100)
+        } else 0
         val nights = store.list()
         val audioFiles = store.totalAudioBytes()
         dataStat.text = "已有 ${nights.size} 晚记录 · 音频共 ${Prefs.usageText(audioFiles)}"

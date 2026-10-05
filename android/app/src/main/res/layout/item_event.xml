@@ -6,11 +6,17 @@
     android:background="@drawable/row_bg"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="12dp">
+    android:padding="13dp">
+
+    <View
+        android:layout_width="4dp"
+        android:layout_height="38dp"
+        android:background="@drawable/event_accent" />
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
@@ -26,16 +32,19 @@
             android:id="@+id/eventDetail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="4dp"
             android:textColor="@color/textDim"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 
     <Button
         android:id="@+id/eventPlay"
+        style="@style/SecondaryActionButton"
         android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:minWidth="96dp"
-        android:text="@string/action_play"
-        android:textSize="12sp" />
+        android:layout_height="38dp"
+        android:minWidth="76dp"
+        android:paddingStart="11dp"
+        android:paddingEnd="11dp"
+        android:text="回听"
+        android:textSize="11sp" />
 </LinearLayout>

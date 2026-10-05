@@ -3,44 +3,54 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
+    android:clipToPadding="false"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="20dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="28dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="日历"
+            android:text="记录日历"
             android:textColor="@color/text"
-            android:textSize="20sp"
+            android:textSize="27sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="观察每一晚的变化"
+            android:textColor="@color/textDim"
+            android:textSize="13sp" />
 
         <com.sleepsentry.ui.MonthCalendarView
             android:id="@+id/calendar"
             android:layout_width="match_parent"
             android:layout_height="330dp"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="18dp"
             android:background="@drawable/card_bg" />
 
-        <!-- 图例容器：必须是 LinearLayout，Kotlin 侧要往里 addView 子项。
-             v1.2.0 误写成 TextView，运行时 findViewById 转型抛 ClassCastException，
-             点日历页必崩。已由 LayoutBindingConsistencyTest 钉住。 -->
         <LinearLayout
             android:id="@+id/legendHost"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:orientation="vertical" />
+
         <TextView
             android:id="@+id/legend"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="颜色越深越严重，格内数字为当晚事件次数"
+            android:text="颜色越暖，代表当晚记录到的疑似事件越多。"
             android:textColor="@color/textDim"
             android:textSize="12sp" />
 
@@ -48,57 +58,73 @@
             android:id="@+id/dayCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="18dp"
             android:background="@drawable/card_bg"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="18dp">
 
             <TextView
                 android:id="@+id/dayTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textColor="@color/textDim"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/dayState"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textSize="15sp"
+                android:layout_marginTop="8dp"
+                android:textSize="23sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/dayDetail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="9dp"
+                android:lineSpacingExtra="3dp"
                 android:textColor="@color/textDim"
                 android:textSize="13sp" />
 
             <Button
                 android:id="@+id/dayReportBtn"
+                style="@style/SecondaryActionButton"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="10dp"
+                android:layout_height="46dp"
+                android:layout_marginTop="14dp"
                 android:text="查看这一晚的完整报告" />
         </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="近 30 晚趋势"
-            android:textColor="@color/text"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="23dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="近 30 晚趋势"
+                android:textColor="@color/text"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="事件 / 小时"
+                android:textColor="@color/textDim"
+                android:textSize="11sp" />
+        </LinearLayout>
 
         <com.sleepsentry.ui.TrendView
             android:id="@+id/trend"
             android:layout_width="match_parent"
-            android:layout_height="110dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="170dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/card_bg" />
     </LinearLayout>
 </ScrollView>

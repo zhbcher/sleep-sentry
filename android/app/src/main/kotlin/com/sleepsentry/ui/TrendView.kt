@@ -22,13 +22,16 @@ class TrendView @JvmOverloads constructor(
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 1f; color = 0xFFE2E8F0.toInt()
+        style = Paint.Style.STROKE; strokeWidth = 1f; color = 0xFF334457.toInt()
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF6B7280.toInt(); textSize = 22f
+        color = 0xFF94A5B7.toInt(); textSize = 22f
     }
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF9AA4B2.toInt(); textSize = 26f; textAlign = Paint.Align.CENTER
+        color = 0xFF94A5B7.toInt(); textSize = 26f; textAlign = Paint.Align.CENTER
+    }
+    private val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF94A5B7.toInt(); textSize = 18f
     }
 
     private var nights: List<NightRecord> = emptyList()
@@ -55,10 +58,11 @@ class TrendView @JvmOverloads constructor(
 
         val maxV = max(10.0, nights.maxOf { it.eventsPerHour }).toFloat()
         // 参考线：AHI 分级线 5 / 15 / 30
-        val refColor = intArrayOf(0xFFB8C4D0.toInt(), 0xFFD9B96A.toInt(), 0xFFD08A7A.toInt())
+        val refColor = intArrayOf(0xFF334457.toInt(), 0xFF725D39.toInt(), 0xFF75483F.toInt())
         floatArrayOf(5f, 15f, 30f).forEachIndexed { i, v ->
             if (v > maxV) return@forEachIndexed
             val y = padT + (1f - v / maxV) * (h - padT - padB)
+            gridPaint.color = refColor[i]
             canvas.drawLine(padL, y, w - padR, y, gridPaint)
             canvas.drawText(v.roundToInt().toString(), padL + 2f, y - 4f, textPaint)
         }
@@ -73,13 +77,17 @@ class TrendView @JvmOverloads constructor(
             val x = padL + i * slot + (slot - bw) / 2
             val y = h - padB - bh
             barPaint.color = when {
-                !r.quality.ok -> 0xFFBFC7D0.toInt()
-                r.eventsPerHour < 5f -> 0xFF6FA98A.toInt()
-                r.eventsPerHour < 15f -> 0xFFD9B96A.toInt()
-                else -> 0xFFD08A7A.toInt()
+                !r.quality.ok -> 0xFF526276.toInt()
+                r.eventsPerHour < 5f -> 0xFF73D5B2.toInt()
+                r.eventsPerHour < 15f -> 0xFFE9C57E.toInt()
+                else -> 0xFFFF9C81.toInt()
             }
             canvas.drawRoundRect(RectF(x, y, x + bw, h - padB), 3f, 3f, barPaint)
         }
-        canvas.drawText("每小时疑似事件次数（越低越好）", padL + 2f, 18f, textPaint)
+        fun compactDate(date: String): String = date.takeLast(5).replace('-', '/')
+        datePaint.textAlign = Paint.Align.LEFT
+        canvas.drawText(compactDate(nights.first().date), padL + 2f, h - 4f, datePaint)
+        datePaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText(compactDate(nights.last().date), w - padR, h - 4f, datePaint)
     }
 }

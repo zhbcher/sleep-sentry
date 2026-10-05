@@ -80,6 +80,7 @@ class StatusFragment : Fragment() {
         val rec: NightRecord? = (activity as? MainActivity)?.store?.latest()
         if (rec == null) {
             quickText.text = "还没有记录"
+            quickText.setTextColor(ContextCompat.getColor(ctx, R.color.text))
             quickSub.text = "插上充电器、放手机在床头，第二天早上这里会有内容。"
         } else {
             quickText.text = when {
@@ -122,7 +123,9 @@ class StatusFragment : Fragment() {
         stateText.setTextColor(
             ContextCompat.getColor(ctx, if (SentryService.isRunning) R.color.good else R.color.brand)
         )
-        liveText.text = if (SentryService.isRunning) {
+        val isRunning = SentryService.isRunning
+        liveText.visibility = if (isRunning) View.VISIBLE else View.GONE
+        liveText.text = if (isRunning) {
             "已监听 ${MorningNotifier.fmtDur(SentryService.liveRecordedSec)} · " +
                     "疑似事件 ${SentryService.liveEventCount} 次 · " +
                     "呼吸声 ${SentryService.liveSnoreCount} 次"

@@ -42,6 +42,9 @@ class ReportFragment : Fragment() {
     private lateinit var sortBtn: Button
     private lateinit var timeline: TimelineView
     private lateinit var hourly: HourlyChartView
+    private lateinit var hourlyHeader: View
+    private lateinit var hourlyHelp: View
+    private lateinit var eventHeader: View
 
     private var current: NightRecord? = null
 
@@ -61,6 +64,9 @@ class ReportFragment : Fragment() {
         sortBtn = view.findViewById(R.id.sortBtn)
         timeline = view.findViewById(R.id.timeline)
         hourly = view.findViewById(R.id.hourlyChart)
+        hourlyHeader = view.findViewById(R.id.hourlyHeader)
+        hourlyHelp = view.findViewById(R.id.hourlyHelp)
+        eventHeader = view.findViewById(R.id.eventHeader)
 
         sortBtn.setOnClickListener {
             prefs.sortEventsByTime = !prefs.sortEventsByTime
@@ -90,6 +96,9 @@ class ReportFragment : Fragment() {
             card.visibility = View.GONE
             eventList.visibility = View.GONE
             hourly.visibility = View.GONE
+            hourlyHeader.visibility = View.GONE
+            hourlyHelp.visibility = View.GONE
+            eventHeader.visibility = View.GONE
             return
         }
         render(rec)
@@ -102,6 +111,9 @@ class ReportFragment : Fragment() {
         card.visibility = View.VISIBLE
         eventList.visibility = View.VISIBLE
         hourly.visibility = View.VISIBLE
+        hourlyHeader.visibility = View.VISIBLE
+        hourlyHelp.visibility = View.VISIBLE
+        eventHeader.visibility = View.VISIBLE
 
         if (!rec.quality.ok) {
             headline.text = "信号不足，未作判定"
@@ -142,7 +154,7 @@ class ReportFragment : Fragment() {
 
     private fun renderEventList(rec: NightRecord) {
         eventList.removeAllViews()
-        sortBtn.text = if (prefs.sortEventsByTime) "按时间排序 ✓" else "按严重程度排序"
+        sortBtn.text = if (prefs.sortEventsByTime) "排序：时间" else "排序：严重程度"
         // 默认按时间先后（用户明确要求）；可切换成"最严重的排前面"
         val ordered = if (prefs.sortEventsByTime) {
             rec.events.sortedBy { it.startSec }
