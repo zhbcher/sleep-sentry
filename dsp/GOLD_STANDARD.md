@@ -378,3 +378,73 @@ segmenteddatepicker），**本机网络全部 404，取不到**。
 ### 测试
 
 60 → **68 条**。
+
+---
+
+## v1.2.2：点日历页必崩（ClassCastException）
+
+### 用户反馈
+
+> "现在点日历，APP 就自动关闭，不知道是闪退还是自动关闭"
+
+**是闪退**，而且是必崩 —— 只要点日历就关，打开 App 那一下反而没事。
+
+### 根因
+
+`fragment_calendar.xml` 里：
+
+```xml
+<TextView
+    android:id="@+id/legendHost"
+    android:orientation="vertical" />      <!-- TextView 上根本没有这个属性 -->
+```
+
+而 Kotlin 里：
+
+```kotlin
+private lateinit var legendHost: android.widget.LinearLayout
+...
+legendHost = view.findViewById(R.id.legendHost)   // 实际返回 TextView → 转 LinearLayout
+```
+
+`View.findViewById` 在 Kotlin 里返回**平台类型 `T!`**，编译器不做校验，
+转型发生在运行时 → **`ClassCastException`** → 点日历页必崩。
+
+出错时机是 `onViewCreated`，所以一进日历页就死。
+
+### 为什么编译器没拦住 / 我第一次"修"没修对
+
+| 环节 | 表现 |
+|---|---|
+| Kotlin 编译器 | `findViewById` 是平台类型，**不检查** |
+| AAPT 资源编译 | `android:orientation` 不是 TextView 的属性，**不报错**（只是运行时忽略） |
+| 我上一轮的自查 | 只改了 Kotlin 侧声明和 id 名，**没回头看 XML 标签**，还顺手加了一个 TextView 上无效的属性 |
+
+教训：改视图绑定时，**布局 XML 和 Kotlin 声明必须一起改**，而且两边都要看。
+
+### 修复
+
+`legendHost` 改回 `<LinearLayout>`。
+
+### 防复发：把这类检查放进构建期
+
+新增 `LayoutBindingConsistencyTest`（3 条）：
+1. `everyFindViewByIdMatchesItsLayoutTag` — 扫全部 Kotlin 的 `findViewById` 赋值，
+   回布局查该 id 的真实标签，校验与字段声明类型相容
+2. `everyCustomViewInLayoutIsReferencedByCode` — 反向检查，防止布局换了自定义 View 而代码没跟上
+3. `legendHostMustBeLinearLayoutInCalendarLayout` — 本次崩溃点的定点回归
+
+**已验证该测试确实能抓到这个问题**：把 XML 改回 `<TextView>` 后两条测试立刻失败，
+改回 `<LinearLayout>` 后通过。不是空跑。
+
+### 教训汇总：三次"编译通过但真机崩溃"
+
+| 版本 | 崩溃 | 为什么编译期看不见 |
+|---|---|---|
+| v1.0.0 | `coerceIn` 下界>上界 | 纯边界问题，要极端数据才触发 |
+| v1.2.0 | 白字画浅灰底，对比度 1.14:1 | 不是崩溃，是可读性，同样"靠眼睛看不出来" |
+| v1.2.1 | `ClassCastException` | `findViewById` 平台类型 + AAPT 不校验属性 |
+
+共同点：**都是编译期看不见、只有真机能暴露的问题。**
+对策也一致：**把能算的算出来、把能查的查出来，都塞进单元测试**。
+目前 71 条测试里有 6 条直接来自这三类真机问题。

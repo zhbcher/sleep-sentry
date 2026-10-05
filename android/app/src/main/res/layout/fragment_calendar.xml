@@ -26,7 +26,10 @@
             android:layout_marginTop="10dp"
             android:background="@drawable/card_bg" />
 
-        <TextView
+        <!-- 图例容器：必须是 LinearLayout，Kotlin 侧要往里 addView 子项。
+             v1.2.0 误写成 TextView，运行时 findViewById 转型抛 ClassCastException，
+             点日历页必崩。已由 LayoutBindingConsistencyTest 钉住。 -->
+        <LinearLayout
             android:id="@+id/legendHost"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
