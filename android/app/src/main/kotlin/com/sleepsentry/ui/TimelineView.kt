@@ -55,6 +55,18 @@ class TimelineView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
+        // 兜底：绘图异常绝不能带走整个 App —— 报告里的文字比图表重要得多。
+        // 几何计算本身已由 TimelineGeometry 保证安全（并有 2 万次随机扫描测试），
+        // 这里只是防止将来新增的绘制代码再引入同类问题。
+        try {
+            drawContent(canvas)
+        } catch (e: Exception) {
+            android.util.Log.w("TimelineView", "绘制失败，已跳过时间轴", e)
+            canvas.drawColor(Color.WHITE)
+        }
+    }
+
+    private fun drawContent(canvas: Canvas) {
         super.onDraw(canvas)
         val w = width.toFloat()
         val h = height.toFloat()
@@ -85,20 +97,16 @@ class TimelineView @JvmOverloads constructor(
             }
         }
 
-        // 事件标记
+        // 事件标记（几何计算交给 TimelineGeometry，那里保证不会出现下界>上界）
         events.forEachIndexed { i, e ->
-            val x1 = (e.startSec / recordedSec).toFloat() * w
-            val x2 = (e.endSec / recordedSec).toFloat() * w
-            val r = RectF(
-                x1.coerceIn(0f, w - 2f), chartTop + 4f,
-                x2.coerceIn(x1 + 3f, w), chartBottom - 4f
-            )
+            val b = TimelineGeometry.markBounds(e.startSec, e.endSec, recordedSec, w)
+            val r = RectF(b[0], chartTop + 4f, b[1], chartBottom - 4f)
             if (i == selected) canvas.drawRoundRect(r, 6f, 6f, hitPaint)
             canvas.drawRoundRect(r, 6f, 6f, if (i == selected) markStroke else markPaint)
         }
 
         // 时间刻度
-        val hours = (recordedSec / 3600.0).toInt().coerceAtLeast(1)
+        val hours = (recordedSec / 3600.0).toInt().coerceIn(1, 24)
         for (hh in 0..hours) {
             val x = (hh / hours.toFloat()) * w
             canvas.drawText("+${hh}h", x + 4f, h - 8f, textPaint)
@@ -108,16 +116,14 @@ class TimelineView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action != MotionEvent.ACTION_UP) return true
         val w = width.toFloat()
-        // 取点击位置附近、离中心最近的那个事件
+        // 取点击位置附近、离中心最近的那个事件（与绘制共用同一套几何，避免两处算出不同的位置）
         var pick = -1
         var bestDist = Float.MAX_VALUE
         events.forEachIndexed { i, e ->
-            val x1 = (e.startSec / recordedSec).toFloat() * w
-            val x2 = (e.endSec / recordedSec).toFloat() * w
-            if (event.x >= x1 - 20f && event.x <= x2 + 20f) {
-                val d = kotlin.math.abs(event.x - (x1 + x2) / 2)
-                if (d < bestDist) { bestDist = d; pick = i }
-            }
+            if (!TimelineGeometry.isHit(e.startSec, e.endSec, recordedSec, w, event.x)) return@forEachIndexed
+            val b = TimelineGeometry.markBounds(e.startSec, e.endSec, recordedSec, w)
+            val d = kotlin.math.abs(event.x - (b[0] + b[1]) / 2)
+            if (d < bestDist) { bestDist = d; pick = i }
         }
         selected = pick
         invalidate()

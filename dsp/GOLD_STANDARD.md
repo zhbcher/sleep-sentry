@@ -174,3 +174,42 @@ cd android && ./gradlew testDebugUnitTest --tests "com.sleepsentry.dsp.GoldStand
 
 **最重要的未验证项：把手机放在床头，用一台家用睡眠监测仪做配对实测。
 这是唯一能把"论文里的 0.79"变成"我们这台手机上真的是 0.79"的实验。**
+
+---
+
+## 线上崩溃：TimelineView 每次启动闪退（v1.0.1 修复）
+
+**用户真机堆栈**：
+```
+java.lang.IllegalArgumentException: Cannot coerce value to an empty range:
+  maximum 1072.0 is less than minimum 1073.0825
+    at kotlin.ranges.RangesKt___RangesKt.coerceIn
+    at com.sleepsentry.ui.TimelineView.onDraw(TimelineView.kt:94)
+```
+
+**根因**：
+```kotlin
+x2.coerceIn(x1 + 3f, w)      // ← x1 + 3f > w 时下界大于上界，直接抛
+```
+事件落在整夜最末尾时（`startSec / recordedSec ≈ 1`），`x1 + 3f` 超过画布宽度。
+
+**为什么"前两次正常、之后一直崩"**：
+第一次打开还没有记录 → 不画时间轴；某晚录出末尾事件后，
+之后每次启动 `renderReport()` 都会 `setData` → `onDraw` → 每次都崩。
+**不是随机问题，是确定性的、只要那份数据还在就必崩。**
+
+**修复**：
+1. 抽出纯函数 `TimelineGeometry.markBounds()`，不依赖 `coerceIn`，显式夹取并保证
+   `0 ≤ left ≤ right ≤ width`
+2. 触摸命中判定改用同一套几何，避免绘制与点击算出不同位置
+3. `onDraw` 加兜底 try/catch：绘图异常降级为"图不出来"，不再带走整个 App
+   （报告文字比图表重要）
+4. 时间刻度数量限制在 1~24，防止异常数据拖慢绘制
+
+**回归测试**（`TimelineGeometryTest`，9 条）：
+崩溃现场数值逐位复现、末尾事件、零时长事件、负数/越界时间、终点早于起点、
+退化输入（宽度 0/负宽）、NaN、绘制与命中共用几何，
+外加 **2 万次随机扫描**（含负时长/负宽度/负时间）断言永不产生非法区间。
+
+**教训**：纯函数 + 边界扫描测试，能在装机前抓住这类只在极端数据下才暴露的崩溃。
+UI 代码同样需要，而且比 DSP 更容易出事 —— 因为脏数据比极端信号常见得多。
