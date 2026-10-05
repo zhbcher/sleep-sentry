@@ -10,11 +10,10 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.sleepsentry.R
-import com.sleepsentry.dsp.Severity
 import java.util.Calendar
 
 /**
- * 月历视图：每晚一个色块，颜色深浅 = 当晚疑似呼吸暂停的严重程度。
+ * 月历视图：每晚一个色块，显示记录质量与声音疑似片段数量。
  *
  * v1.2.0 用**白字画浅灰格子**，对比度只有 1.14:1，用户反馈"看不清日期"。
  * 两处结构性修正：
@@ -226,20 +225,15 @@ object DayStateMapper {
     fun of(eventsPerHour: Double, hasRecord: Boolean, qualityOk: Boolean): MonthCalendarView.DayState {
         if (!hasRecord) return MonthCalendarView.DayState.NO_RECORD
         if (!qualityOk) return MonthCalendarView.DayState.INSUFFICIENT
-        return when (Severity.levelOf(eventsPerHour)) {
-            Severity.Level.NORMAL -> MonthCalendarView.DayState.NORMAL
-            Severity.Level.MILD -> MonthCalendarView.DayState.MILD
-            Severity.Level.MODERATE -> MonthCalendarView.DayState.MODERATE
-            Severity.Level.SEVERE -> MonthCalendarView.DayState.SEVERE
-        }
+        return MonthCalendarView.DayState.NORMAL
     }
 
     fun label(state: MonthCalendarView.DayState): String = when (state) {
         MonthCalendarView.DayState.NO_RECORD -> "无记录"
         MonthCalendarView.DayState.INSUFFICIENT -> "信号不足"
-        MonthCalendarView.DayState.NORMAL -> "正常范围"
-        MonthCalendarView.DayState.MILD -> "轻度"
-        MonthCalendarView.DayState.MODERATE -> "中度"
-        MonthCalendarView.DayState.SEVERE -> "重度"
+        MonthCalendarView.DayState.NORMAL -> "有记录"
+        MonthCalendarView.DayState.MILD -> "有记录"
+        MonthCalendarView.DayState.MODERATE -> "有记录"
+        MonthCalendarView.DayState.SEVERE -> "有记录"
     }
 }

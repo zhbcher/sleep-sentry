@@ -18,7 +18,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
- * 日历页：每晚一个色块，颜色表示那晚的严重程度。
+ * 日历页：每晚记录状态和声音疑似片段数量。
  *
  * 这是"长期趋势"最直观的看法 —— 一眼扫过去就知道哪几晚特别糟、有没有在变好，
  * 比翻单晚报告有用得多。点某天看当天概要，点按钮跳到报告页看完整内容。
@@ -106,10 +106,7 @@ class CalendarFragment : Fragment() {
         val pairs = listOf(
             MonthCalendarView.DayState.NO_RECORD to "无记录",
             MonthCalendarView.DayState.INSUFFICIENT to "信号不足",
-            MonthCalendarView.DayState.NORMAL to "正常",
-            MonthCalendarView.DayState.MILD to "轻度",
-            MonthCalendarView.DayState.MODERATE to "中度",
-            MonthCalendarView.DayState.SEVERE to "重度"
+            MonthCalendarView.DayState.NORMAL to "有记录"
         )
         pairs.chunked(3).forEach { rowItems ->
             val row = android.widget.LinearLayout(ctx).apply {
@@ -165,9 +162,9 @@ class CalendarFragment : Fragment() {
                 append("信号不足：${rec.quality.reason()}\n")
                 append("有效记录 ${MorningNotifier.fmtDur(rec.recordedSec)}")
             } else {
-                append("疑似事件 ${rec.events.size} 次 · 每小时 ${"%.1f".format(rec.eventsPerHour)} 次\n")
+                append("声音疑似片段 ${rec.events.size} 次 · 每小时录音 ${"%.1f".format(rec.eventsPerHour)} 个\n")
                 append("鼾声 ${rec.peakCount} 次 · 有效记录 ${MorningNotifier.fmtDur(rec.recordedSec)}\n")
-                append("分级：${rec.level.label}（${rec.level.advice}）")
+                append("声音筛查结果仅供观察，不等同于临床诊断")
                 rec.worstEvent?.let { append("\n最长静默 ${it.silenceSec.roundToInt()} 秒") }
             }
         }
@@ -177,10 +174,10 @@ class CalendarFragment : Fragment() {
     private fun colorOf(st: MonthCalendarView.DayState): Int = when (st) {
         MonthCalendarView.DayState.NO_RECORD -> R.color.textDim
         MonthCalendarView.DayState.INSUFFICIENT -> R.color.textDim
-        MonthCalendarView.DayState.NORMAL -> R.color.good
-        MonthCalendarView.DayState.MILD -> R.color.warn
-        MonthCalendarView.DayState.MODERATE -> R.color.bad
-        MonthCalendarView.DayState.SEVERE -> R.color.bad
+        MonthCalendarView.DayState.NORMAL -> R.color.brand
+        MonthCalendarView.DayState.MILD -> R.color.brand
+        MonthCalendarView.DayState.MODERATE -> R.color.brand
+        MonthCalendarView.DayState.SEVERE -> R.color.brand
     }
 
     private fun todayDayOf(y: Int, m: Int): Int {

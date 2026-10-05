@@ -54,7 +54,7 @@ class Prefs(private val ctx: Context) {
         get() = sp.getInt(KEY_QUOTA, DEFAULT_QUOTA_MB)
         set(v) = sp.edit().putInt(KEY_QUOTA, v).apply()
 
-    /** 报告页事件列表是否按时间排序（false = 按憋气时长，最严重的排前面） */
+    /** 报告页事件列表是否按时间排序（false = 按静默时长排序） */
     var sortEventsByTime: Boolean
         get() = sp.getBoolean(KEY_SORT_TIME, true)
         set(v) = sp.edit().putBoolean(KEY_SORT_TIME, v).apply()

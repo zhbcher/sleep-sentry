@@ -85,8 +85,8 @@ class StatusFragment : Fragment() {
         } else {
             quickText.text = when {
                 !rec.quality.ok -> "信号不足，未作判定"
-                rec.events.isEmpty() -> "未检出疑似呼吸暂停"
-                else -> "疑似呼吸暂停 ${rec.events.size} 次"
+                rec.events.isEmpty() -> "未检出明显的呼吸声静默片段"
+                else -> "检出声音疑似片段 ${rec.events.size} 次"
             }
             quickText.setTextColor(
                 ContextCompat.getColor(ctx, colorOf(rec))
@@ -94,11 +94,12 @@ class StatusFragment : Fragment() {
             quickSub.text = buildString {
                 append("${rec.date} · 有效记录 ${MorningNotifier.fmtDur(rec.recordedSec)}\n")
                 if (rec.events.isNotEmpty()) {
-                    append("每小时 ${"%.1f".format(rec.eventsPerHour)} 次 · ${rec.level.label}\n")
-                    rec.worstEvent?.let { append("最长静默 ${it.silenceSec.roundToInt()} 秒") }
+                    append("每小时录音 ${"%.1f".format(rec.eventsPerHour)} 个声音片段\n")
+                    rec.worstEvent?.let { append("最长静默 ${it.silenceSec.roundToInt()} 秒\n") }
                 } else {
-                    append("鼾声 ${rec.peakCount} 次")
+                    append("鼾声 ${rec.peakCount} 次\n")
                 }
+                append("仅为麦克风声音筛查，不作睡眠呼吸暂停诊断")
             }
         }
         renderLive()
@@ -106,10 +107,7 @@ class StatusFragment : Fragment() {
 
     private fun colorOf(rec: NightRecord): Int = when {
         !rec.quality.ok -> R.color.textDim
-        rec.events.isEmpty() -> R.color.good
-        rec.eventsPerHour < 5 -> R.color.good
-        rec.eventsPerHour < 15 -> R.color.warn
-        else -> R.color.bad
+        else -> R.color.brand
     }
 
     private fun renderLive() {
@@ -127,7 +125,7 @@ class StatusFragment : Fragment() {
         liveText.visibility = if (isRunning) View.VISIBLE else View.GONE
         liveText.text = if (isRunning) {
             "已监听 ${MorningNotifier.fmtDur(SentryService.liveRecordedSec)} · " +
-                    "疑似事件 ${SentryService.liveEventCount} 次 · " +
+                    "声音疑似片段 ${SentryService.liveEventCount} 次 · " +
                     "呼吸声 ${SentryService.liveSnoreCount} 次"
         } else ""
     }

@@ -3,7 +3,6 @@ package com.sleepsentry.store
 import android.content.Context
 import com.sleepsentry.dsp.BreathingEvent
 import com.sleepsentry.dsp.NightQuality
-import com.sleepsentry.dsp.Severity
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -31,11 +30,9 @@ data class NightRecord(
     val envelopePointSec: Double,
     val fullAudioFile: String? = null
 ) {
-    /** 疑似事件小时密度 —— 分级的主指标 */
+    /** 每小时录音中检出的声音疑似事件数；不代表临床 AHI。 */
     val eventsPerHour: Double
         get() = if (recordedSec <= 0) 0.0 else events.size / (recordedSec / 3600.0)
-
-    val level: Severity.Level get() = Severity.levelOf(eventsPerHour)
 
     /** 最长静默的事件 */
     val worstEvent: StoredEvent? get() = events.maxByOrNull { it.silenceSec }
@@ -90,6 +87,7 @@ object NightRecordJson {
         q.put("activeFraction", r.quality.activeFraction)
         q.put("peakCount", r.quality.peakCount)
         q.put("ok", r.quality.ok)
+        q.put("clippedFraction", r.quality.clippedFraction)
         root.put("quality", q)
         return root.toString()
     }
@@ -127,7 +125,8 @@ object NightRecordJson {
                 activeSnrMedianDb = q?.optDouble("activeSnrMedianDb", 0.0) ?: 0.0,
                 activeFraction = q?.optDouble("activeFraction", 0.0) ?: 0.0,
                 peakCount = q?.optInt("peakCount", 0) ?: 0,
-                ok = q?.optBoolean("ok", false) ?: false
+                ok = q?.optBoolean("ok", false) ?: false,
+                clippedFraction = q?.optDouble("clippedFraction", 0.0) ?: 0.0
             ),
             peakCount = root.optInt("peakCount"),
             snoreActiveSec = root.optDouble("snoreActiveSec"),

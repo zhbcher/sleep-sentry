@@ -57,15 +57,10 @@ class TrendView @JvmOverloads constructor(
         }
 
         val maxV = max(10.0, nights.maxOf { it.eventsPerHour }).toFloat()
-        // 参考线：AHI 分级线 5 / 15 / 30
-        val refColor = intArrayOf(0xFF334457.toInt(), 0xFF725D39.toInt(), 0xFF75483F.toInt())
-        floatArrayOf(5f, 15f, 30f).forEachIndexed { i, v ->
-            if (v > maxV) return@forEachIndexed
-            val y = padT + (1f - v / maxV) * (h - padT - padB)
-            gridPaint.color = refColor[i]
-            canvas.drawLine(padL, y, w - padR, y, gridPaint)
-            canvas.drawText(v.roundToInt().toString(), padL + 2f, y - 4f, textPaint)
-        }
+        // 仅展示个人声音疑似片段趋势，不使用临床 AHI 分级参考线。
+        gridPaint.color = 0xFF334457.toInt()
+        canvas.drawLine(padL, padT + (h - padT - padB) / 2f, w - padR,
+            padT + (h - padT - padB) / 2f, gridPaint)
 
         val n = nights.size
         val slot = (w - padL - padR) / n
@@ -76,12 +71,7 @@ class TrendView @JvmOverloads constructor(
             val bh = max(2f, (v / maxV) * (h - padT - padB))
             val x = padL + i * slot + (slot - bw) / 2
             val y = h - padB - bh
-            barPaint.color = when {
-                !r.quality.ok -> 0xFF526276.toInt()
-                r.eventsPerHour < 5f -> 0xFF73D5B2.toInt()
-                r.eventsPerHour < 15f -> 0xFFE9C57E.toInt()
-                else -> 0xFFFF9C81.toInt()
-            }
+            barPaint.color = if (r.quality.ok) 0xFF73D5B2.toInt() else 0xFF526276.toInt()
             canvas.drawRoundRect(RectF(x, y, x + bw, h - padB), 3f, 3f, barPaint)
         }
         fun compactDate(date: String): String = date.takeLast(5).replace('-', '/')

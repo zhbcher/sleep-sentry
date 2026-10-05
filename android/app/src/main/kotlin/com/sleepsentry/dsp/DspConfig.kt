@@ -61,6 +61,9 @@ object DspConfig {
     const val MIN_ACTIVE_FRAC = 0.02
     const val MIN_PEAKS = 30
 
+    /** 超过该比例的原始 PCM 样本削波时，不输出有效的声音筛查结果。 */
+    const val MAX_CLIPPED_FRACTION = 0.01
+
     /** 峰检测所需的环形历史窗口深度 */
     const val FRAME_WINDOW_CAP = 64
 }

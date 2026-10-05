@@ -24,13 +24,13 @@
 
     <!-- 报告 -->
     <string name="report_title">昨晚</string>
-    <string name="report_disclaimer">本记录基于手机麦克风的声音推算，不构成医疗诊断。声音记录无法反映血氧与中枢性事件，请以医院睡眠监测（PSG/HSAT）为准。</string>
+    <string name="report_disclaimer">本记录仅分析手机麦克风采集到的声音，用于观察声音疑似片段趋势，不构成睡眠呼吸暂停诊断，也不能排除患病可能。声音记录无法测量气流、呼吸努力、血氧或睡眠状态；如有担忧，请咨询医生并接受正规睡眠检查。</string>
     <string name="report_quality_bad">昨晚信号不足，未作判定：%1$s</string>
-    <string name="label_events_per_hour">每小时疑似事件</string>
+    <string name="label_events_per_hour">每小时录音声音疑似片段</string>
     <string name="label_longest">最长静默</string>
     <string name="label_snore">鼾声</string>
     <string name="label_recorded">有效记录</string>
-    <string name="label_peak">最严重一次</string>
+    <string name="label_peak">最长静默</string>
     <string name="action_play">点击回听</string>
     <string name="label_silent_s">静默 %1$d 秒</string>
 

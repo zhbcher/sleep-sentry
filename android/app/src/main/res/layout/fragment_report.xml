@@ -101,7 +101,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="橙色标记为疑似呼吸暂停，点击标记可回听。"
+                android:text="标记为声音疑似片段，点击可回听；声音变化不能确认呼吸暂停。"
                 android:textColor="@color/textDim"
                 android:textSize="11sp" />
         </LinearLayout>
@@ -111,7 +111,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="22dp"
-            android:text="每小时分布"
+                android:text="声音疑似片段分布"
             android:textColor="@color/text"
             android:textSize="19sp"
             android:textStyle="bold" />
@@ -128,7 +128,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="浅色区间表示当晚实际有录音的时段。点击柱状图可定位事件。"
+                android:text="浅色区间表示当晚实际有录音的时段。点击柱状图可定位声音片段。"
             android:textColor="@color/textDim"
             android:textSize="11sp" />
 

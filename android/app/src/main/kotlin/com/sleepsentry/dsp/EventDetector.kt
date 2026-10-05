@@ -61,6 +61,8 @@ class EventDetector(
     private val histAllBins = IntArray(512)     // 全部帧（用于响度对比度）
     private var activeSnrCount = 0
     private var totalFrameCount = 0
+    private var rawSampleCount = 0L
+    private var clippedSampleCount = 0L
 
     val recordedSeconds: Double get() = t
     val peakCount: Int get() = peaks.size
@@ -77,8 +79,15 @@ class EventDetector(
     // ---------------------------------------------------------------- 主入口
 
     /** 喂入一段已带通滤波的 [-1,1] 浮点样本。返回本块新确认的事件。 */
-    fun processChunk(buf: FloatArray, t0Sec: Double? = null): List<BreathingEvent> {
+    fun processChunk(
+        buf: FloatArray,
+        t0Sec: Double? = null,
+        rawSampleCount: Int = 0,
+        clippedSampleCount: Int = 0
+    ): List<BreathingEvent> {
         if (buf.isEmpty()) return emptyList()
+        this.rawSampleCount += rawSampleCount.coerceAtLeast(0)
+        this.clippedSampleCount += clippedSampleCount.coerceIn(0, rawSampleCount.coerceAtLeast(0))
         val t0 = t0Sec ?: t
 
         // 与上次残余拼接，保证子帧对齐
@@ -160,7 +169,8 @@ class EventDetector(
     /** 便捷入口：16bit PCM → 滤波 → 检测。滤波器状态跨调用保持连续。 */
     fun processPcm16(pcm: ShortArray, count: Int = pcm.size, t0Sec: Double? = null): List<BreathingEvent> {
         val f = FloatArray(count) { pcm[it] / 32768.0f }
-        return processChunk(internalFilter.filter(f, count), t0Sec)
+        val clipped = (0 until count).count { kotlin.math.abs(pcm[it].toInt()) >= 32760 }
+        return processChunk(internalFilter.filter(f, count), t0Sec, count, clipped)
     }
 
     /** 检测器自持滤波器，避免调用方忘了跨块保持状态 */
@@ -229,11 +239,7 @@ class EventDetector(
                 continue
             }
             // peaks 按时间递增，用二分找到第一块窗口，避免每帧全表扫描
-            val hit = findPeakInWindow(end, end + eventCtxS)
-            if (hit != null && !looksLikeBreath(hit)) {
-                // 找到了峰，但它不是"一次呼吸"（多半是环境噪声的起始台阶）
-                continue@forEach
-            }
+            val hit = findBreathPeakInWindow(end, end + eventCtxS)
             if (hit != null) {
                 events.add(
                     BreathingEvent(
@@ -264,7 +270,8 @@ class EventDetector(
         return (p.db - lo) >= DspConfig.BREATH_DECAY_DB
     }
 
-    private fun findPeakInWindow(tFrom: Double, tTo: Double): BreathPeak? {
+    /** 忽略静默后不符合呼吸衰减形态的瞬态噪声，继续寻找窗口内后续的真实呼吸峰。 */
+    private fun findBreathPeakInWindow(tFrom: Double, tTo: Double): BreathPeak? {
         var lo = 0
         var hi = peaks.size
         while (lo < hi) {
@@ -273,7 +280,8 @@ class EventDetector(
         }
         var i = lo
         while (i < peaks.size && peaks[i].timeSec <= tTo) {
-            return peaks[i]
+            val peak = peaks[i++]
+            if (looksLikeBreath(peak)) return peak
         }
         return null
     }
@@ -293,10 +301,12 @@ class EventDetector(
             activeFraction = activeFrac,
             peakCount = peaks.size,
             ok = t >= DspConfig.MIN_RECORD_S &&
+                (rawSampleCount == 0L || clippedSampleCount.toDouble() / rawSampleCount <= DspConfig.MAX_CLIPPED_FRACTION) &&
                 median >= DspConfig.MIN_ACTIVE_SNR_DB &&
                 activeFrac >= DspConfig.MIN_ACTIVE_FRAC &&
                 peaks.size >= DspConfig.MIN_PEAKS,
-            loudnessContrastDb = loudnessContrastDb()
+            loudnessContrastDb = loudnessContrastDb(),
+            clippedFraction = if (rawSampleCount == 0L) 0.0 else clippedSampleCount.toDouble() / rawSampleCount
         )
         return events.toList() to quality
     }
@@ -355,6 +365,7 @@ class EventDetector(
         rem = FloatArray(0)
         nf.reset(); hist.reset()
         peaks.clear(); silences.clear(); events.clear()
+        rawSampleCount = 0L; clippedSampleCount = 0L
         histBins.fill(0); histAllBins.fill(0); activeSnrCount = 0; totalFrameCount = 0
     }
 

@@ -242,7 +242,8 @@ class SentryService : Service() {
 
                 val f = FloatArray(n) { pcm[it] / 32768.0f }
                 val filtered = filter.filter(f, n)
-                detector.processChunk(filtered, elapsed)
+                val clipped = (0 until n).count { kotlin.math.abs(pcm[it].toInt()) >= 32760 }
+                detector.processChunk(filtered, elapsed, n, clipped)
                 elapsed += n.toDouble() / sr
 
                 var off = 0

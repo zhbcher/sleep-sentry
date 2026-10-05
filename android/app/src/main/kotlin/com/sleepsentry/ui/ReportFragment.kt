@@ -13,7 +13,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.sleepsentry.R
 import com.sleepsentry.capture.MorningNotifier
-import com.sleepsentry.dsp.Severity
 import com.sleepsentry.store.HourlyBuckets
 import com.sleepsentry.store.NightRecord
 import com.sleepsentry.store.NightStore
@@ -122,8 +121,8 @@ class ReportFragment : Fragment() {
             level.setTextColor(ContextCompat.getColor(requireContext(), R.color.warn))
         } else {
             headline.text = when {
-                rec.events.isEmpty() -> "未检出疑似呼吸暂停"
-                else -> "疑似呼吸暂停 ${rec.events.size} 次"
+                rec.events.isEmpty() -> "未检出明显的呼吸声静默片段"
+                else -> "声音疑似片段 ${rec.events.size} 次"
             }
             val startOfNight = SimpleDateFormat("HH:mm", Locale.US).format(Date(rec.startMillis))
             sub.text = buildString {
@@ -133,15 +132,9 @@ class ReportFragment : Fragment() {
                     append(" · 环境信噪 ${rec.quality.activeSnrMedianDb.roundToInt()}dB")
                 }
             }
-            val lv = rec.level
-            level.text = "每小时 ${"%.1f".format(rec.eventsPerHour)} 次 · ${lv.label}\n${lv.advice}"
-            level.setTextColor(
-                ContextCompat.getColor(requireContext(), when (lv) {
-                    Severity.Level.NORMAL -> R.color.good
-                    Severity.Level.MILD -> R.color.warn
-                    else -> R.color.bad
-                })
-            )
+            level.text = "每小时录音 ${"%.1f".format(rec.eventsPerHour)} 个声音片段\n" +
+                    "仅反映麦克风记录到的声音变化，不等同于 AHI 或睡眠呼吸暂停分级。"
+            level.setTextColor(ContextCompat.getColor(requireContext(), R.color.textDim))
         }
 
         timeline.setData(rec.envelope, rec.events, rec.recordedSec)
@@ -154,8 +147,8 @@ class ReportFragment : Fragment() {
 
     private fun renderEventList(rec: NightRecord) {
         eventList.removeAllViews()
-        sortBtn.text = if (prefs.sortEventsByTime) "排序：时间" else "排序：严重程度"
-        // 默认按时间先后（用户明确要求）；可切换成"最严重的排前面"
+        sortBtn.text = if (prefs.sortEventsByTime) "排序：时间" else "排序：静默时长"
+        // 默认按时间先后；可切换成按静默时长排序
         val ordered = if (prefs.sortEventsByTime) {
             rec.events.sortedBy { it.startSec }
         } else {

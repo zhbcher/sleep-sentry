@@ -136,17 +136,18 @@ object MorningNotifier {
             }
             rec.events.isEmpty() -> {
                 channel = CHANNEL_REPORT
-                title = "昨晚未检出疑似呼吸暂停"
-                body = "有效记录 ${fmtDur(rec.recordedSec)} · 鼾声 ${rec.peakCount} 次 · 环境正常"
+                title = "昨晚未检出明显的呼吸声静默片段"
+                body = "有效记录 ${fmtDur(rec.recordedSec)} · 鼾声 ${rec.peakCount} 次 · 仅供声音趋势观察"
             }
             else -> {
                 channel = CHANNEL_REPORT
-                title = "昨晚 ${rec.events.size} 次疑似呼吸暂停"
+                title = "昨晚检出 ${rec.events.size} 个声音疑似片段"
                 val worst = rec.worstEvent
                 body = buildString {
                     append("${fmtDur(rec.recordedSec)} · 每小时 ")
-                    append("%.1f".format(rec.eventsPerHour)).append(" 次（${rec.level.label}）")
-                    if (worst != null) append("\n最长一次静默 ${worst.silenceSec.toInt()} 秒")
+                    append("%.1f".format(rec.eventsPerHour)).append(" 个 / 每小时录音")
+                    if (worst != null) append("\n最长静默 ${worst.silenceSec.toInt()} 秒")
+                    append("\n声音筛查结果不等同于临床诊断")
                 }
             }
         }
